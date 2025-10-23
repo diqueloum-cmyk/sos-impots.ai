@@ -346,7 +346,7 @@
     // Vérifier le statut de l'utilisateur
     async function checkUserStatus() {
       try {
-        const response = await fetch('/api/signup.js', {
+        const response = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -459,7 +459,7 @@
       submitBtn.textContent = 'Connexion...';
 
       try {
-        const response = await fetch('/api/signup.js', {
+        const response = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -516,7 +516,7 @@
       submitBtn.textContent = 'Inscription en cours...';
 
       try {
-        const response = await fetch('/api/signup.js', {
+        const response = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -549,7 +549,7 @@
     // Déconnexion
     async function logout() {
       try {
-        await fetch('/api/signup.js', {
+        await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -602,7 +602,7 @@
       loadingBtn.classList.remove('hidden');
 
       try {
-        const response = await fetch('/api/chat.js', {
+        const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

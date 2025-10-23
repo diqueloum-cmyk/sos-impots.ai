@@ -103,7 +103,7 @@
 
       try {
         // Tester la clé admin en appelant les stats
-        const response = await fetch('/api/signup.js', {
+        const response = await fetch('/api/signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -131,7 +131,7 @@
 
     async function testAdminKey(key) {
       try {
-        const response = await fetch('/api/signup.js', {
+        const response = await fetch('/api/signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -171,7 +171,7 @@
       if (!adminKey) return;
 
       try {
-        const response = await fetch('/api/signup.js', {
+        const response = await fetch('/api/signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -210,7 +210,7 @@
       if (!adminKey) return;
 
       try {
-        const response = await fetch('/api/signup.js', {
+        const response = await fetch('/api/signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
