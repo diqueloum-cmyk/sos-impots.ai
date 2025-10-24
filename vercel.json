@@ -6,6 +6,12 @@
     },
     "api/signup.js": {
       "maxDuration": 10
+    },
+    "api/setup-db.js": {
+      "maxDuration": 10
+    },
+    "api/conversations.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
