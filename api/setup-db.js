@@ -2,7 +2,7 @@
 // À exécuter UNE SEULE FOIS après avoir configuré Vercel Postgres
 // URL: https://votre-site.vercel.app/api/setup-db
 
-import { createUsersTable, createCacheTable } from '../lib/db.js';
+import { createUsersTable, createCacheTable, createConversationTables } from '../lib/db.js';
 import logger from '../lib/logger.js';
 
 export default async function handler(req, res) {
@@ -40,6 +40,10 @@ export default async function handler(req, res) {
     const cacheResult = await createCacheTable();
     logger.info('Table chat_cache créée');
 
+    // Créer les tables de conversation
+    const conversationResult = await createConversationTables();
+    logger.info('Tables de conversation créées');
+
     logger.info('Base de données initialisée avec succès');
 
     return res.status(200).json({
@@ -47,7 +51,8 @@ export default async function handler(req, res) {
       message: 'Base de données initialisée avec succès',
       details: {
         users: usersResult,
-        cache: cacheResult
+        cache: cacheResult,
+        conversations: conversationResult
       },
       timestamp: new Date().toISOString(),
       info: {
@@ -87,6 +92,35 @@ export default async function handler(req, res) {
               'idx_question_hash',
               'idx_expires_at',
               'idx_hit_count'
+            ]
+          },
+          conversation_sessions: {
+            columns: [
+              'id (SERIAL PRIMARY KEY)',
+              'user_id (INTEGER REFERENCES users)',
+              'title (VARCHAR 255)',
+              'started_at (TIMESTAMP)',
+              'last_message_at (TIMESTAMP)',
+              'message_count (INTEGER)'
+            ],
+            indexes: [
+              'idx_session_user'
+            ]
+          },
+          conversation_messages: {
+            columns: [
+              'id (SERIAL PRIMARY KEY)',
+              'session_id (INTEGER REFERENCES conversation_sessions)',
+              'role (VARCHAR 20 - user/assistant)',
+              'content (TEXT)',
+              'created_at (TIMESTAMP)',
+              'tokens_used (INTEGER)',
+              'response_time_ms (INTEGER)',
+              'was_cached (BOOLEAN)'
+            ],
+            indexes: [
+              'idx_messages_session',
+              'idx_messages_role'
             ]
           }
         }

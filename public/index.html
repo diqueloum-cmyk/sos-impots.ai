@@ -11,6 +11,54 @@
     body { font-family: 'Poppins', sans-serif; }
     .typing-cursor { animation: blink 1s infinite; }
     @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+    /* Conversation History Styles */
+    .conversation-sidebar {
+      transition: transform 0.3s ease-in-out;
+    }
+    .conversation-item {
+      transition: background-color 0.2s;
+    }
+    .conversation-item:hover {
+      background-color: #f3f4f6;
+    }
+    .conversation-item.active {
+      background-color: #dbeafe;
+      border-left: 3px solid #2563eb;
+    }
+    .session-actions {
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .conversation-item:hover .session-actions {
+      opacity: 1;
+    }
+    @media (max-width: 768px) {
+      .conversation-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 50;
+        transform: translateX(-100%);
+      }
+      .conversation-sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+      .sidebar-overlay.open {
+        display: block;
+      }
+    }
   </style>
 </head>
 <body class="bg-white text-gray-800">
@@ -65,29 +113,77 @@
     </div>
   </section>
 
-  <!-- Chatbot Section -->
+  <!-- Chatbot Section with History Sidebar -->
   <section class="py-16 px-4 bg-white">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-7xl mx-auto">
       <h2 class="text-3xl font-bold text-center text-blue-900 mb-8">Conseil Juridique IA Spécialisé</h2>
-      <div class="bg-gray-50 rounded-lg p-6 shadow-lg">
-        <div id="chatContainer" class="space-y-4 mb-4" style="max-height: 400px; overflow-y: auto;">
-          <div class="text-center text-gray-500">
-            <p>Posez votre question juridique ci-dessous...</p>
-            <p class="text-sm mt-2" id="questionCounter">Questions gratuites restantes : 2</p>
+
+      <!-- Overlay for mobile sidebar -->
+      <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+      <div class="flex gap-4 relative">
+        <!-- Conversation History Sidebar (hidden by default, shown only for logged users) -->
+        <div id="conversationSidebar" class="conversation-sidebar hidden bg-white border-r border-gray-200 w-64 md:w-72 p-4 overflow-y-auto" style="max-height: 600px;">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg text-gray-800">Conversations</h3>
+            <button onclick="startNewConversation()" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+              + Nouvelle
+            </button>
+          </div>
+
+          <!-- Stats (optional) -->
+          <div id="conversationStats" class="mb-4 p-3 bg-blue-50 rounded-lg text-sm hidden">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Total:</span>
+              <span id="totalSessions" class="font-semibold">0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Messages:</span>
+              <span id="totalMessages" class="font-semibold">0</span>
+            </div>
+          </div>
+
+          <!-- Session List -->
+          <div id="sessionList" class="space-y-2">
+            <div class="text-center text-gray-400 text-sm py-8">
+              Aucune conversation
+            </div>
           </div>
         </div>
-        <div class="flex space-x-2">
-          <input type="text" id="userInput" placeholder="Ex: Comment procéder pour un divorce ?" class="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0">
-          <button onclick="askGPT()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors min-w-[48px] flex-shrink-0">
-            <span id="sendBtn">
-              <span class="hidden max-[500px]:inline">↑</span>
-              <span class="max-[500px]:hidden">Envoyer</span>
-            </span>
-            <span id="loadingBtn" class="hidden">
-              <span class="hidden max-[500px]:inline">...</span>
-              <span class="max-[500px]:hidden">Envoi...</span>
-            </span>
-          </button>
+
+        <!-- Main Chat Area -->
+        <div class="flex-1">
+          <div class="bg-gray-50 rounded-lg p-6 shadow-lg">
+            <!-- Mobile: Button to toggle sidebar -->
+            <button id="toggleSidebarBtn" onclick="toggleSidebar()" class="md:hidden mb-4 text-blue-600 hover:text-blue-700 font-medium text-sm hidden">
+              ☰ Historique
+            </button>
+
+            <!-- Current Session Title (for logged users) -->
+            <div id="currentSessionHeader" class="mb-4 pb-3 border-b border-gray-200 hidden">
+              <h4 id="currentSessionTitle" class="font-semibold text-gray-800 text-lg">Nouvelle conversation</h4>
+            </div>
+
+            <div id="chatContainer" class="space-y-4 mb-4" style="max-height: 400px; overflow-y: auto;">
+              <div class="text-center text-gray-500">
+                <p>Posez votre question juridique ci-dessous...</p>
+                <p class="text-sm mt-2" id="questionCounter">Questions gratuites restantes : 2</p>
+              </div>
+            </div>
+            <div class="flex space-x-2">
+              <input type="text" id="userInput" placeholder="Ex: Comment procéder pour un divorce ?" class="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0">
+              <button onclick="askGPT()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors min-w-[48px] flex-shrink-0">
+                <span id="sendBtn">
+                  <span class="hidden max-[500px]:inline">↑</span>
+                  <span class="max-[500px]:hidden">Envoyer</span>
+                </span>
+                <span id="loadingBtn" class="hidden">
+                  <span class="hidden max-[500px]:inline">...</span>
+                  <span class="max-[500px]:hidden">Envoi...</span>
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -342,6 +438,8 @@
     let currentUser = null;
     let questionsUsed = 0;
     const maxFreeQuestions = 2;
+    let currentSessionId = null; // ID de la session de conversation actuelle
+    let conversationSessions = []; // Liste des sessions
 
     // Vérifier le statut utilisateur au chargement
     document.addEventListener('DOMContentLoaded', function() {
@@ -378,12 +476,19 @@
       document.getElementById('userStatus').classList.remove('hidden');
       document.getElementById('loginBtn').classList.add('hidden');
       document.getElementById('userName').textContent = user.firstName || user.email;
+
+      // Afficher la sidebar et charger l'historique
+      showConversationSidebar();
+      loadConversationHistory();
     }
 
     // Masquer le statut utilisateur
     function hideUserStatus() {
       document.getElementById('userStatus').classList.add('hidden');
       document.getElementById('loginBtn').classList.remove('hidden');
+
+      // Masquer la sidebar
+      hideConversationSidebar();
     }
 
     // Lire les cookies (helper function)
@@ -612,7 +717,10 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ message: question })
+          body: JSON.stringify({
+            message: question,
+            sessionId: currentSessionId // Envoyer l'ID de session actuel
+          })
         });
 
         // Vérifier si la réponse est OK avant de parser le JSON
@@ -636,6 +744,24 @@
         if (data.success) {
           // Ajouter la réponse avec effet de frappe
           addTypingMessage(data.response);
+
+          // Mettre à jour le sessionId si nouvelle session créée
+          if (data.sessionId) {
+            currentSessionId = data.sessionId;
+
+            // Si utilisateur connecté, mettre à jour le titre et recharger l'historique
+            if (currentUser) {
+              // Mettre le titre de la session (première question)
+              if (!document.getElementById('currentSessionTitle').textContent.includes(question.substring(0, 30))) {
+                document.getElementById('currentSessionTitle').textContent = question.substring(0, 50) + (question.length > 50 ? '...' : '');
+              }
+
+              // Recharger l'historique pour afficher la nouvelle session
+              setTimeout(() => {
+                loadConversationHistory();
+              }, 500);
+            }
+          }
 
           // Incrémenter le compteur si utilisateur non connecté
           if (!currentUser) {
@@ -760,6 +886,253 @@
         askGPT();
       }
     });
+
+    // ====================================
+    // GESTION DE L'HISTORIQUE DES CONVERSATIONS
+    // ====================================
+
+    // Afficher la sidebar des conversations
+    function showConversationSidebar() {
+      document.getElementById('conversationSidebar').classList.remove('hidden');
+      document.getElementById('toggleSidebarBtn').classList.remove('hidden');
+      document.getElementById('currentSessionHeader').classList.remove('hidden');
+    }
+
+    // Masquer la sidebar des conversations
+    function hideConversationSidebar() {
+      document.getElementById('conversationSidebar').classList.add('hidden');
+      document.getElementById('toggleSidebarBtn').classList.add('hidden');
+      document.getElementById('currentSessionHeader').classList.add('hidden');
+    }
+
+    // Toggle sidebar sur mobile
+    function toggleSidebar() {
+      const sidebar = document.getElementById('conversationSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('open');
+    }
+
+    // Charger l'historique des conversations
+    async function loadConversationHistory() {
+      try {
+        const response = await fetch('/api/conversations', {
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          conversationSessions = data.sessions || [];
+          renderSessionList();
+
+          // Charger les stats (optionnel)
+          loadConversationStats();
+        }
+      } catch (error) {
+        console.error('Erreur chargement historique:', error);
+      }
+    }
+
+    // Charger les statistiques
+    async function loadConversationStats() {
+      try {
+        const response = await fetch('/api/conversations?action=stats', {
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.stats) {
+          document.getElementById('conversationStats').classList.remove('hidden');
+          document.getElementById('totalSessions').textContent = data.stats.totalSessions;
+          document.getElementById('totalMessages').textContent = data.stats.totalMessages;
+        }
+      } catch (error) {
+        console.error('Erreur chargement stats:', error);
+      }
+    }
+
+    // Afficher la liste des sessions
+    function renderSessionList() {
+      const sessionList = document.getElementById('sessionList');
+
+      if (conversationSessions.length === 0) {
+        sessionList.innerHTML = '<div class="text-center text-gray-400 text-sm py-8">Aucune conversation</div>';
+        return;
+      }
+
+      sessionList.innerHTML = conversationSessions.map(session => `
+        <div class="conversation-item p-3 rounded-lg cursor-pointer ${session.id === currentSessionId ? 'active' : ''}"
+             onclick="loadSession(${session.id})">
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-medium text-sm text-gray-800 truncate">${escapeHtml(session.title)}</h4>
+              <p class="text-xs text-gray-500 mt-1">${session.messageCount} messages</p>
+              <p class="text-xs text-gray-400">${formatDate(session.lastMessageAt)}</p>
+            </div>
+            <div class="session-actions ml-2 flex space-x-1">
+              <button onclick="event.stopPropagation(); deleteSession(${session.id})"
+                      class="text-red-500 hover:text-red-700 p-1"
+                      title="Supprimer">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Charger une session spécifique
+    async function loadSession(sessionId) {
+      try {
+        // Fermer sidebar sur mobile
+        document.getElementById('conversationSidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+
+        const response = await fetch(`/api/conversations?sessionId=${sessionId}`, {
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          currentSessionId = sessionId;
+
+          // Mettre à jour le titre
+          const session = conversationSessions.find(s => s.id === sessionId);
+          if (session) {
+            document.getElementById('currentSessionTitle').textContent = session.title;
+          }
+
+          // Afficher les messages
+          const chatContainer = document.getElementById('chatContainer');
+          chatContainer.innerHTML = '';
+
+          data.messages.forEach(msg => {
+            addMessageToUI(msg.content, msg.role, false, msg.wasCached);
+          });
+
+          // Mettre à jour l'affichage de la session active
+          renderSessionList();
+        }
+      } catch (error) {
+        console.error('Erreur chargement session:', error);
+      }
+    }
+
+    // Démarrer une nouvelle conversation
+    function startNewConversation() {
+      currentSessionId = null;
+      document.getElementById('currentSessionTitle').textContent = 'Nouvelle conversation';
+      document.getElementById('chatContainer').innerHTML = `
+        <div class="text-center text-gray-500">
+          <p>Posez votre question juridique ci-dessous...</p>
+        </div>
+      `;
+      renderSessionList();
+
+      // Fermer sidebar sur mobile
+      document.getElementById('conversationSidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('open');
+    }
+
+    // Supprimer une session
+    async function deleteSession(sessionId) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cette conversation ?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/conversations?sessionId=${sessionId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Si c'était la session active, démarrer une nouvelle
+          if (sessionId === currentSessionId) {
+            startNewConversation();
+          }
+
+          // Recharger l'historique
+          await loadConversationHistory();
+        } else {
+          alert('Erreur lors de la suppression');
+        }
+      } catch (error) {
+        console.error('Erreur suppression session:', error);
+        alert('Erreur lors de la suppression');
+      }
+    }
+
+    // Ajouter un message à l'interface (helper amélioré)
+    function addMessageToUI(message, sender, isLoading = false, isCached = false) {
+      const chatContainer = document.getElementById('chatContainer');
+      const messageDiv = document.createElement('div');
+      const messageId = 'msg_' + Date.now();
+
+      messageDiv.id = messageId;
+      messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+
+      const messageContent = document.createElement('div');
+      messageContent.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+        sender === 'user'
+          ? 'bg-blue-600 text-white'
+          : 'bg-gray-200 text-gray-800'
+      }`;
+
+      if (isLoading) {
+        const textSpan = document.createElement('span');
+        textSpan.textContent = message;
+        const cursorSpan = document.createElement('span');
+        cursorSpan.className = 'typing-cursor';
+        messageContent.appendChild(textSpan);
+        messageContent.appendChild(cursorSpan);
+      } else {
+        messageContent.textContent = message;
+
+        // Badge "Cached" si applicable
+        if (isCached && sender === 'assistant') {
+          const badge = document.createElement('span');
+          badge.className = 'ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded';
+          badge.textContent = 'Cache';
+          messageContent.appendChild(badge);
+        }
+      }
+
+      messageDiv.appendChild(messageContent);
+      chatContainer.appendChild(messageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      return messageId;
+    }
+
+    // Utilitaires
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'À l\'instant';
+      if (diffMins < 60) return `Il y a ${diffMins}min`;
+      if (diffHours < 24) return `Il y a ${diffHours}h`;
+      if (diffDays === 1) return 'Hier';
+      if (diffDays < 7) return `Il y a ${diffDays}j`;
+
+      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    }
   </script>
 
 </body>

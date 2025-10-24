@@ -1,5 +1,11 @@
 import { parseCookies, setCorsHeaders, handleCorsPreflight, createCookie } from '../lib/utils.js';
-import { getCachedAnswer, saveCachedAnswer } from '../lib/db.js';
+import {
+  getCachedAnswer,
+  saveCachedAnswer,
+  findUserByEmail,
+  createConversationSession,
+  addConversationMessage
+} from '../lib/db.js';
 import {
   chatRateLimiter,
   chatRateLimiterRegistered,
@@ -24,7 +30,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body;
+    const { message, sessionId } = req.body;
 
     if (!message || message.trim() === '') {
       return res.status(400).json({ error: 'Message is required' });
@@ -37,6 +43,16 @@ export default async function handler(req, res) {
     const userEmail = cookies.user_email;
 
     logger.debug('Cookies:', { qUsed, registered });
+
+    // Récupérer l'utilisateur si connecté
+    let currentUser = null;
+    if (registered && userEmail) {
+      try {
+        currentUser = await findUserByEmail(userEmail);
+      } catch (error) {
+        logger.error('Erreur récupération utilisateur:', error);
+      }
+    }
 
     // ====================================
     // RATE LIMITING
@@ -76,10 +92,14 @@ export default async function handler(req, res) {
       });
     }
 
+    // Mesurer le temps de réponse
+    const startTime = Date.now();
+
     // Vérifier le cache d'abord
     const cachedResponse = await getCachedAnswer(message);
     let answer;
     let fromCache = false;
+    let tokensUsed = 0;
 
     if (cachedResponse) {
       // Réponse trouvée dans le cache
@@ -122,8 +142,53 @@ export default async function handler(req, res) {
       const openaiData = await openaiResponse.json();
       answer = openaiData.choices[0]?.message?.content || 'Désolé, je n\'ai pas pu générer une réponse.';
 
+      // Estimer les tokens utilisés (approximation)
+      tokensUsed = openaiData.usage?.total_tokens || 0;
+
       // Sauvegarder la réponse dans le cache
       await saveCachedAnswer(message, answer);
+    }
+
+    // Calculer le temps de réponse
+    const responseTimeMs = Date.now() - startTime;
+
+    // ====================================
+    // SAUVEGARDER LA CONVERSATION (si utilisateur connecté)
+    // ====================================
+    let conversationSessionId = sessionId;
+
+    if (currentUser) {
+      try {
+        // Si pas de sessionId, créer une nouvelle session
+        if (!conversationSessionId) {
+          conversationSessionId = await createConversationSession(currentUser.id, message);
+          logger.debug('Nouvelle session créée:', conversationSessionId);
+        }
+
+        // Sauvegarder la question de l'utilisateur
+        await addConversationMessage(conversationSessionId, 'user', message, {
+          tokensUsed: 0,
+          responseTimeMs: null,
+          wasCached: false
+        });
+
+        // Sauvegarder la réponse de l'assistant
+        await addConversationMessage(conversationSessionId, 'assistant', answer, {
+          tokensUsed,
+          responseTimeMs,
+          wasCached: fromCache
+        });
+
+        logger.info('Conversation sauvegardée:', {
+          userId: currentUser.id,
+          sessionId: conversationSessionId,
+          cached: fromCache
+        });
+
+      } catch (error) {
+        // Ne pas bloquer la réponse si la sauvegarde échoue
+        logger.error('Erreur sauvegarde conversation:', error);
+      }
     }
 
     // Incrémenter le compteur de questions si non inscrit
@@ -143,7 +208,8 @@ export default async function handler(req, res) {
       response: answer,
       qUsed: newQUsed,
       remaining,
-      cached: fromCache
+      cached: fromCache,
+      sessionId: conversationSessionId // Retourner le sessionId pour le frontend
     });
 
   } catch (error) {
