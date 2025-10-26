@@ -10,7 +10,9 @@ import {
   getSessionMessages,
   deleteConversationSession,
   updateSessionTitle,
-  getUserConversationStats
+  getUserConversationStats,
+  createConversationSession,
+  addConversationMessage
 } from '../lib/db.js';
 import logger from '../lib/logger.js';
 
@@ -103,6 +105,59 @@ export default async function handler(req, res) {
     }
 
     // ====================================
+    // POST: Sauvegarder les messages anonymes
+    // ====================================
+    if (req.method === 'POST') {
+      const { action, messages } = req.body;
+
+      if (action === 'saveAnonymous') {
+        if (!messages || !Array.isArray(messages) || messages.length === 0) {
+          return res.status(400).json({
+            error: 'Messages requis'
+          });
+        }
+
+        // Créer une nouvelle session avec le premier message utilisateur comme titre
+        const firstUserMessage = messages.find(m => m.role === 'user');
+        const title = firstUserMessage
+          ? firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
+          : 'Conversation anonyme';
+
+        const sessionId = await createConversationSession(user.id, title);
+
+        // Sauvegarder tous les messages dans la session
+        for (const msg of messages) {
+          await addConversationMessage(
+            sessionId,
+            msg.role,
+            msg.content,
+            {
+              tokensUsed: 0,
+              responseTimeMs: 0,
+              wasCached: false
+            }
+          );
+        }
+
+        logger.info('Messages anonymes sauvegardés:', {
+          userId: user.id,
+          sessionId,
+          messageCount: messages.length
+        });
+
+        return res.status(200).json({
+          success: true,
+          sessionId,
+          message: 'Messages sauvegardés avec succès'
+        });
+      }
+
+      return res.status(400).json({
+        error: 'Action non reconnue'
+      });
+    }
+
+    // ====================================
     // PUT: Mettre à jour le titre d'une session
     // ====================================
     if (req.method === 'PUT') {
@@ -133,7 +188,7 @@ export default async function handler(req, res) {
     // Méthode non supportée
     return res.status(405).json({
       error: 'Méthode non supportée',
-      allowed: ['GET', 'DELETE', 'PUT']
+      allowed: ['GET', 'POST', 'DELETE', 'PUT']
     });
 
   } catch (error) {

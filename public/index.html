@@ -621,6 +621,10 @@
         if (data.success) {
           showMessage('Connexion réussie !', 'success');
           currentUser = data.user;
+
+          // Sauvegarder les messages anonymes s'il y en a
+          await saveAnonymousMessages();
+
           showUserStatus(data.user);
           setTimeout(() => {
             closeAuthModal();
@@ -678,6 +682,10 @@
         if (data.success) {
           showMessage('Inscription réussie ! Vous pouvez maintenant poser des questions illimitées.', 'success');
           currentUser = data.user;
+
+          // Sauvegarder les messages anonymes s'il y en a
+          await saveAnonymousMessages();
+
           showUserStatus(data.user);
 
           setTimeout(() => {
@@ -736,6 +744,70 @@
       messageDiv.textContent = message;
       messageDiv.className = `p-3 rounded ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
       messageDiv.classList.remove('hidden');
+    }
+
+    // Sauvegarder les messages anonymes après connexion/inscription
+    async function saveAnonymousMessages() {
+      const chatContainer = document.getElementById('chatContainer');
+      const messageElements = chatContainer.querySelectorAll('.flex');
+
+      if (messageElements.length === 0) {
+        return; // Pas de messages à sauvegarder
+      }
+
+      // Collecter les messages de la chatbox
+      const messages = [];
+      messageElements.forEach(msgDiv => {
+        const isUser = msgDiv.classList.contains('justify-end');
+        const messageContent = msgDiv.querySelector('div');
+
+        if (messageContent) {
+          // Extraire le texte en ignorant les badges "Cache" et autres éléments
+          let text = '';
+          messageContent.childNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+              text += node.textContent;
+            } else if (node.nodeName === 'SPAN' && !node.classList.contains('typing-cursor') && !node.textContent.includes('Cache')) {
+              text += node.textContent;
+            }
+          });
+
+          text = text.trim();
+          if (text && !text.includes('Réflexion en cours') && !text.includes('Posez votre question')) {
+            messages.push({
+              role: isUser ? 'user' : 'assistant',
+              content: text
+            });
+          }
+        }
+      });
+
+      if (messages.length === 0) {
+        return; // Pas de vrais messages à sauvegarder
+      }
+
+      try {
+        // Envoyer les messages au serveur pour les sauvegarder
+        const response = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            action: 'saveAnonymous',
+            messages: messages
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.sessionId) {
+          currentSessionId = data.sessionId;
+          // Recharger l'historique pour afficher la nouvelle session
+          await loadConversationHistory();
+        }
+      } catch (error) {
+        console.error('Erreur sauvegarde messages anonymes:', error);
+      }
     }
 
     // Fonction principale pour poser une question
