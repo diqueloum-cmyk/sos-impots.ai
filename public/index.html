@@ -70,7 +70,7 @@
       <nav class="hidden md:flex space-x-6">
         <a href="#about">À propos</a>
         <a href="#features">Services</a>
-        <a href="#pricing">Formules et tarifs</a>
+        <a href="#pricing">Tarifs et Comment ça marche ?</a>
         <a href="#testimonials">Témoignages</a>
         <a href="#faq">FAQ</a>
         <a href="#contact">Contact</a>
@@ -227,62 +227,54 @@
   <!-- Pricing Section -->
   <section id="pricing" class="py-16 px-4 bg-gray-50">
     <div class="max-w-6xl mx-auto">
-      <h2 class="text-3xl font-bold text-center text-blue-900 mb-12">Formules et Tarifs</h2>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="bg-white p-8 rounded-lg shadow-lg text-center">
-          <h3 class="text-2xl font-bold text-blue-900 mb-4">Gratuit</h3>
-          <div class="text-4xl font-bold text-blue-600 mb-6">0€</div>
-          <ul class="space-y-3 mb-8">
-            <li class="flex items-center space-x-2">
-              <span class="text-green-500">✓</span>
-              <span>2 questions IA gratuites</span>
-            </li>
-            <li class="flex items-center space-x-2">
-              <span class="text-green-500">✓</span>
-              <span>Réponses instantanées</span>
-            </li>
-          </ul>
-          <button class="bg-blue-600 text-white px-6 py-3 rounded-lg w-full hover:bg-blue-700">Commencer</button>
-        </div>
-        <div class="bg-white p-8 rounded-lg shadow-lg text-center border-2 border-blue-600 relative">
-          <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm">Populaire</div>
-          <h3 class="text-2xl font-bold text-blue-900 mb-4">Illimité</h3>
-          <div class="text-4xl font-bold text-blue-600 mb-6">29€<span class="text-lg">/mois</span></div>
-          <ul class="space-y-3 mb-8">
-            <li class="flex items-center space-x-2">
-              <span class="text-green-500">✓</span>
-              <span>Questions IA illimitées</span>
-            </li>
-            <li class="flex items-center space-x-2">
-              <span class="text-green-500">✓</span>
-              <span>Accès avocat préférentiel</span>
-            </li>
-            <li class="flex items-center space-x-2">
-              <span class="text-green-500">✓</span>
-              <span>Suivi personnalisé</span>
-            </li>
-          </ul>
-          <button onclick="showAuthModal('register')" class="bg-blue-600 text-white px-6 py-3 rounded-lg w-full hover:bg-blue-700">S'inscrire</button>
-        </div>
-        <div class="bg-white p-8 rounded-lg shadow-lg text-center">
-          <h3 class="text-2xl font-bold text-blue-900 mb-4">Consultation</h3>
-          <div class="text-4xl font-bold text-blue-600 mb-6">69€<span class="text-lg">/h</span></div>
-          <ul class="space-y-3 mb-8">
-            <li class="flex items-center space-x-2">
-              <span class="text-green-500">✓</span>
-              <span>Consultation avocat directe</span>
-            </li>
-            <li class="flex items-center space-x-2">
-              <span class="text-green-500">✓</span>
-              <span>Analyse de votre dossier</span>
-            </li>
-            <li class="flex items-center space-x-2">
-              <span class="text-green-500">✓</span>
-              <span>Conseils personnalisés</span>
-            </li>
-          </ul>
-          <button class="bg-blue-600 text-white px-6 py-3 rounded-lg w-full hover:bg-blue-700">Réserver</button>
+      <h2 class="text-3xl font-bold text-center text-blue-900 mb-8">Tarifs et Comment ça marche ?</h2>
+
+      <div class="max-w-4xl mx-auto mb-12">
+        <h3 class="text-2xl font-bold text-blue-900 mb-4">💬 Des honoraires personnalisés, selon votre situation</h3>
+        <p class="text-lg text-gray-700 mb-4">
+          Chaque dossier de divorce est unique.<br>
+          Le coût dépend notamment du type de procédure (amiable ou judiciaire), de la présence d'enfants, du partage des biens, ou encore du niveau d'accord entre les époux.
+        </p>
+        <p class="text-lg text-gray-700 mb-6">
+          Pour vous donner un tarif juste et transparent, nous avons mis en place un processus simple et confidentiel :
+        </p>
       </div>
+
+      <!-- Process Cards -->
+      <div class="grid md:grid-cols-3 gap-8 mb-12">
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+          <div class="text-4xl mb-4 text-center">1️⃣</div>
+          <h3 class="text-xl font-bold text-blue-900 mb-4 text-center">Discutez avec notre assistant</h3>
+          <p class="text-gray-700 text-center">
+            Décrivez votre situation directement dans le chat : type de divorce, enfants, patrimoine, objectifs (rapidité, coût, garde, partage, etc.).
+          </p>
+        </div>
+
+        <div class="bg-white p-8 rounded-lg shadow-lg border-2 border-blue-600">
+          <div class="text-4xl mb-4 text-center">2️⃣</div>
+          <h3 class="text-xl font-bold text-blue-900 mb-4 text-center">Mémo automatique</h3>
+          <p class="text-gray-700 text-center">
+            L'assistant prépare automatiquement un mémo récapitulatif de votre dossier. Ce document reprend les éléments essentiels à l'analyse de votre cas.
+          </p>
+        </div>
+
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+          <div class="text-4xl mb-4 text-center">3️⃣</div>
+          <h3 class="text-xl font-bold text-blue-900 mb-4 text-center">Estimation personnalisée</h3>
+          <p class="text-gray-700 text-center">
+            Envoyez ce mémo à notre équipe à 📧 contact@sosdivorce.fr. Nous étudierons votre dossier et reviendrons vers vous sous 24 à 48 heures avec une estimation personnalisée des honoraires et la proposition d'un avocat partenaire spécialisé, inscrit à un barreau français.
+          </p>
+        </div>
+      </div>
+
+      <!-- Final Message -->
+      <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-8 max-w-4xl mx-auto text-center">
+        <p class="text-xl font-semibold text-blue-900">
+          💡 Cet accompagnement est entièrement gratuit et sans engagement.
+        </p>
+        <p class="text-lg text-gray-700 mt-3">
+          Vous restez libre d'accepter ou non la mise en relation.
+        </p>
       </div>
     </div>
   </section>
