@@ -850,15 +850,24 @@
             // Si le JSON parsing échoue, utiliser le message par défaut
             errorMessage = `Erreur ${response.status}: ${response.statusText}`;
           }
+          // Supprimer le message de chargement avant de lancer l'erreur
+          removeMessage(loadingId);
           throw new Error(errorMessage);
         }
 
         const data = await response.json();
+        console.log('Chat API response:', data); // Debug log
 
         // Supprimer le message de chargement
         removeMessage(loadingId);
 
         if (data.success) {
+          // Vérifier que la réponse existe
+          if (!data.response) {
+            console.error('No response in data:', data);
+            throw new Error('Aucune réponse reçue de l\'assistant');
+          }
+
           // Ajouter la réponse avec effet de frappe
           addTypingMessage(data.response);
 
