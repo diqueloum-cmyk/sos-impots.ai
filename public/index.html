@@ -822,6 +822,7 @@
 
       // Afficher l'indicateur de chargement
       const loadingId = addMessage('Réflexion en cours...', 'assistant', true);
+      console.log('Created loading message with ID:', loadingId);
       
       // Désactiver le bouton
       const sendBtn = document.getElementById('sendBtn');
@@ -961,9 +962,13 @@
 
     // Supprimer un message
     function removeMessage(messageId) {
+      console.log('Trying to remove message with ID:', messageId);
       const message = document.getElementById(messageId);
       if (message) {
+        console.log('Message found, removing:', message);
         message.remove();
+      } else {
+        console.warn('Message not found with ID:', messageId);
       }
     }
 
