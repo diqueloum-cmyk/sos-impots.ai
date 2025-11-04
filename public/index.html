@@ -67,7 +67,7 @@
   <header class="bg-blue-900 text-white p-4">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
       <div class="text-3xl font-bold">sosdivorce.fr</div>
-      <nav class="hidden md:flex space-x-6">
+      <nav id="mainNav" class="hidden md:flex space-x-6">
         <a href="#about">À propos</a>
         <a href="#features">Services</a>
         <a href="#pricing">Tarifs et Comment ça marche ?</a>
@@ -498,6 +498,9 @@
       showConversationSidebar();
       loadConversationHistory();
 
+      // Masquer le menu de navigation
+      document.getElementById('mainNav').classList.add('hidden');
+
       // Masquer toutes les sections sauf le chatbot et les tarifs
       const sectionsToHide = ['heroSection', 'about', 'features', 'testimonials', 'faq', 'contact'];
       sectionsToHide.forEach(sectionId => {
@@ -515,6 +518,9 @@
 
       // Masquer la sidebar
       hideConversationSidebar();
+
+      // Réafficher le menu de navigation
+      document.getElementById('mainNav').classList.remove('hidden');
 
       // Réafficher toutes les sections
       const sectionsToShow = ['heroSection', 'about', 'features', 'testimonials', 'faq', 'contact'];
