@@ -1238,14 +1238,6 @@
         messageContent.appendChild(cursorSpan);
       } else {
         messageContent.textContent = message;
-
-        // Badge "Cached" si applicable
-        if (isCached && sender === 'assistant') {
-          const badge = document.createElement('span');
-          badge.className = 'ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded';
-          badge.textContent = 'Cache';
-          messageContent.appendChild(badge);
-        }
       }
 
       messageDiv.appendChild(messageContent);
