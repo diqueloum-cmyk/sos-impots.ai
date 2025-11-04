@@ -499,7 +499,10 @@
       loadConversationHistory();
 
       // Masquer le menu de navigation
-      document.getElementById('mainNav').classList.add('hidden');
+      const nav = document.getElementById('mainNav');
+      if (nav) {
+        nav.style.display = 'none';
+      }
 
       // Masquer toutes les sections sauf le chatbot et les tarifs
       const sectionsToHide = ['heroSection', 'about', 'features', 'testimonials', 'faq', 'contact'];
@@ -520,7 +523,10 @@
       hideConversationSidebar();
 
       // Réafficher le menu de navigation
-      document.getElementById('mainNav').classList.remove('hidden');
+      const nav = document.getElementById('mainNav');
+      if (nav) {
+        nav.style.display = '';
+      }
 
       // Réafficher toutes les sections
       const sectionsToShow = ['heroSection', 'about', 'features', 'testimonials', 'faq', 'contact'];
