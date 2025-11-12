@@ -120,7 +120,7 @@
       <!-- Overlay for mobile sidebar -->
       <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-      <div class="flex gap-4 relative">
+      <div class="flex gap-2 md:gap-4 relative">
         <!-- Conversation History Sidebar (hidden by default, shown only for logged users) -->
         <div id="conversationSidebar" class="conversation-sidebar hidden bg-white border-r border-gray-200 w-64 md:w-72 p-4 overflow-y-auto" style="max-height: 600px;">
           <div class="flex items-center justify-between mb-4">
@@ -151,8 +151,8 @@
         </div>
 
         <!-- Main Chat Area -->
-        <div class="flex-1">
-          <div class="bg-gray-50 rounded-lg p-6 shadow-lg">
+        <div class="flex-1 min-w-0">
+          <div class="bg-gray-50 rounded-lg p-3 md:p-6 shadow-lg">
             <!-- Mobile: Button to toggle sidebar -->
             <button id="toggleSidebarBtn" onclick="toggleSidebar()" class="md:hidden mb-4 text-blue-600 hover:text-blue-700 font-medium text-sm hidden">
               ☰ Historique
