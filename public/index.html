@@ -64,9 +64,9 @@
 <body class="bg-white text-gray-800">
 
   <!-- Header -->
-  <header class="bg-blue-900 text-white p-4">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <div class="text-3xl font-bold">sosdivorce.fr</div>
+  <header class="bg-blue-900 text-white p-3 md:p-4">
+    <div class="max-w-6xl mx-auto flex justify-between items-center gap-2">
+      <div class="text-xl md:text-3xl font-bold whitespace-nowrap">sosdivorce.fr</div>
       <nav id="mainNav" class="hidden md:flex space-x-6">
         <a href="#about">À propos</a>
         <a href="#features">Services</a>
@@ -75,12 +75,12 @@
         <a href="#faq">FAQ</a>
         <a href="#contact">Contact</a>
       </nav>
-      <div class="flex items-center space-x-4">
-        <div id="userStatus" class="hidden text-sm">
-          <span id="userName"></span>
-          <button onclick="logout()" class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">Déconnexion</button>
+      <div class="flex items-center space-x-2 md:space-x-4">
+        <div id="userStatus" class="hidden text-xs md:text-sm">
+          <span id="userName" class="hidden sm:inline"></span>
+          <button onclick="logout()" class="ml-1 md:ml-2 text-xs bg-red-600 px-2 py-1 rounded whitespace-nowrap">Déconnexion</button>
         </div>
-        <button id="loginBtn" onclick="showAuthModal('login')" class="bg-green-600 px-3 py-1 rounded text-sm">Connexion</button>
+        <button id="loginBtn" onclick="showAuthModal('login')" class="bg-green-600 px-2 md:px-3 py-1 rounded text-xs md:text-sm whitespace-nowrap">Connexion</button>
       </div>
     </div>
   </header>
