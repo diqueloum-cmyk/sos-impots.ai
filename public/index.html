@@ -550,11 +550,10 @@
     function updateQuestionCounter() {
       const counterElement = document.getElementById('questionCounter');
 
-      // Si l'utilisateur est connecté, afficher le texte spécifique
+      // Si l'utilisateur est connecté, masquer le compteur
       if (currentUser) {
         if (counterElement) {
-          counterElement.style.display = 'block';
-          counterElement.innerHTML = 'Micro-ligne explicative<br>Inscription en 20 secondes. Historique et mémo de vos échanges sauvegardés.';
+          counterElement.style.display = 'none';
         }
         return;
       }
