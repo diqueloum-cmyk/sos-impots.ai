@@ -679,9 +679,23 @@
 
     // Vérifier le statut utilisateur au chargement
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM Content Loaded'); // Debug
       checkUserStatus();
       updateQuestionCounter();
       checkCookieConsent();
+
+      // TEST: Forcer l'affichage du bandeau après 2 secondes
+      setTimeout(() => {
+        const banner = document.getElementById('cookieBanner');
+        console.log('Force show banner test, element:', banner);
+        if (banner) {
+          console.log('Banner computed style:', window.getComputedStyle(banner).display);
+          console.log('Banner classes:', banner.className);
+          banner.classList.add('show');
+          console.log('Banner classes after add:', banner.className);
+          console.log('Banner computed style after:', window.getComputedStyle(banner).display);
+        }
+      }, 2000);
     });
 
     // Vérifier le statut de l'utilisateur
