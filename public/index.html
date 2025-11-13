@@ -68,12 +68,18 @@
       right: 0;
       background: white;
       box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      border-top: 3px solid #2563eb;
       z-index: 9999;
       transform: translateY(100%);
       transition: transform 0.3s ease-in-out;
     }
     .cookie-banner.show {
       transform: translateY(0);
+    }
+
+    /* Force visibility for testing */
+    .cookie-banner {
+      display: block !important;
     }
   </style>
 </head>
@@ -571,11 +577,15 @@
     // Vérifier et afficher le bandeau cookies au chargement
     function checkCookieConsent() {
       const consent = localStorage.getItem('cookieConsent');
+      console.log('Cookie consent check:', consent); // Debug
       if (!consent) {
-        // Afficher le bandeau après un court délai
-        setTimeout(() => {
-          document.getElementById('cookieBanner').classList.add('show');
-        }, 1000);
+        // Afficher le bandeau immédiatement
+        const banner = document.getElementById('cookieBanner');
+        console.log('Cookie banner element:', banner); // Debug
+        if (banner) {
+          banner.classList.add('show');
+          console.log('Cookie banner should be visible now'); // Debug
+        }
       } else {
         // Charger les cookies selon le consentement
         const preferences = JSON.parse(consent);
