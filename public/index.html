@@ -604,6 +604,12 @@
 
     // Afficher le modal de personnalisation
     function showCookiePreferences() {
+      // Masquer temporairement le bandeau
+      const banner = document.getElementById('cookieBannerDynamic');
+      if (banner) {
+        banner.style.display = 'none';
+      }
+
       document.getElementById('cookiePreferencesModal').classList.remove('hidden');
       // Charger les préférences existantes si elles existent
       const consent = localStorage.getItem('cookieConsent');
@@ -617,6 +623,14 @@
     // Fermer le modal de personnalisation
     function closeCookiePreferences() {
       document.getElementById('cookiePreferencesModal').classList.add('hidden');
+      // Réafficher le bandeau si le consentement n'a pas été donné
+      const consent = localStorage.getItem('cookieConsent');
+      if (!consent) {
+        const banner = document.getElementById('cookieBannerDynamic');
+        if (banner) {
+          banner.style.display = 'block';
+        }
+      }
     }
 
     // Enregistrer les préférences personnalisées
