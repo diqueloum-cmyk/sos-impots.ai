@@ -583,12 +583,21 @@
       const consent = localStorage.getItem('cookieConsent');
       console.log('Cookie consent check:', consent); // Debug
       if (!consent) {
-        // Afficher le bandeau immédiatement
+        // Afficher le bandeau immédiatement avec style inline
         const banner = document.getElementById('cookieBanner');
         console.log('Cookie banner element:', banner); // Debug
         if (banner) {
-          banner.classList.add('show');
-          console.log('Cookie banner should be visible now'); // Debug
+          banner.style.display = 'block';
+          banner.style.position = 'fixed';
+          banner.style.bottom = '0';
+          banner.style.left = '0';
+          banner.style.right = '0';
+          banner.style.width = '100%';
+          banner.style.backgroundColor = 'white';
+          banner.style.boxShadow = '0 -4px 20px rgba(0, 0, 0, 0.15)';
+          banner.style.borderTop = '3px solid #2563eb';
+          banner.style.zIndex = '99999';
+          console.log('Cookie banner should be visible now with inline styles'); // Debug
         }
       } else {
         // Charger les cookies selon le consentement
@@ -659,7 +668,10 @@
 
     // Masquer le bandeau
     function hideCookieBanner() {
-      document.getElementById('cookieBanner').classList.remove('show');
+      const banner = document.getElementById('cookieBanner');
+      if (banner) {
+        banner.style.display = 'none';
+      }
     }
 
     // Charger les cookies selon les préférences
