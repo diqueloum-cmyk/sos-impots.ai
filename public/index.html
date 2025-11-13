@@ -64,30 +64,7 @@
 </head>
 <body class="bg-white text-gray-800">
 
-  <!-- Cookie Banner -->
-  <div id="cookieBanner">
-    <div class="max-w-6xl mx-auto p-4 md:p-6">
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div class="flex-1">
-          <h3 class="font-bold text-lg text-gray-900 mb-2">🍪 Gestion des cookies</h3>
-          <p class="text-sm text-gray-600 mb-3">
-            Nous utilisons des cookies pour améliorer votre expérience sur notre site. Aucun cookie non essentiel (Google Analytics, Google Ads, Meta, etc.) ne sera activé avant votre consentement.
-          </p>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <button onclick="acceptAllCookies()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium">
-            Accepter tous les cookies
-          </button>
-          <button onclick="acceptEssentialOnly()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors whitespace-nowrap text-sm font-medium">
-            Refuser tous (sauf nécessaires)
-          </button>
-          <button onclick="showCookiePreferences()" class="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap text-sm font-medium">
-            Personnaliser
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Cookie Banner will be created dynamically by JavaScript -->
 
   <!-- Cookie Preferences Modal -->
   <div id="cookiePreferencesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[10000] overflow-y-auto">
@@ -558,22 +535,47 @@
       const consent = localStorage.getItem('cookieConsent');
       console.log('Cookie consent check:', consent); // Debug
       if (!consent) {
-        // Afficher le bandeau immédiatement
-        const banner = document.getElementById('cookieBanner');
-        console.log('Cookie banner element:', banner); // Debug
-        if (banner) {
-          // Supprimer toutes les classes qui pourraient interférer
-          banner.className = '';
-          // Appliquer les styles directement via setAttribute pour contourner tout CSS
-          banner.setAttribute('style', 'display: block !important; position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; background-color: white !important; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important; border-top: 3px solid #2563eb !important; z-index: 99999 !important; padding: 1rem !important;');
-          console.log('Cookie banner style attribute set'); // Debug
-          console.log('Banner final style:', banner.getAttribute('style'));
-        }
+        // Créer le bandeau dynamiquement
+        createCookieBanner();
       } else {
         // Charger les cookies selon le consentement
         const preferences = JSON.parse(consent);
         loadCookies(preferences);
       }
+    }
+
+    // Créer le bandeau cookies dynamiquement
+    function createCookieBanner() {
+      const banner = document.createElement('div');
+      banner.id = 'cookieBannerDynamic';
+      banner.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background-color: white; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15); border-top: 3px solid #2563eb; z-index: 99999; padding: 1.5rem;';
+
+      banner.innerHTML = `
+        <div style="max-width: 72rem; margin: 0 auto;">
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="flex: 1;">
+              <h3 style="font-weight: bold; font-size: 1.125rem; color: #111827; margin-bottom: 0.5rem;">🍪 Gestion des cookies</h3>
+              <p style="font-size: 0.875rem; color: #4B5563;">
+                Nous utilisons des cookies pour améliorer votre expérience sur notre site. Aucun cookie non essentiel (Google Analytics, Google Ads, Meta, etc.) ne sera activé avant votre consentement.
+              </p>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              <button onclick="acceptAllCookies()" style="background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-size: 0.875rem; font-weight: 500;">
+                Accepter tous les cookies
+              </button>
+              <button onclick="acceptEssentialOnly()" style="background-color: #E5E7EB; color: #1F2937; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-size: 0.875rem; font-weight: 500;">
+                Refuser tous (sauf nécessaires)
+              </button>
+              <button onclick="showCookiePreferences()" style="background-color: white; color: #1F2937; padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid #D1D5DB; cursor: pointer; font-size: 0.875rem; font-weight: 500;">
+                Personnaliser
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(banner);
+      console.log('Cookie banner created dynamically');
     }
 
     // Accepter tous les cookies
@@ -638,9 +640,9 @@
 
     // Masquer le bandeau
     function hideCookieBanner() {
-      const banner = document.getElementById('cookieBanner');
+      const banner = document.getElementById('cookieBannerDynamic');
       if (banner) {
-        banner.style.setProperty('display', 'none', 'important');
+        banner.remove();
       }
     }
 
