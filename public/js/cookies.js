@@ -1,5 +1,5 @@
 // ====================================
-// GESTION DES COOKIES - SOSDivorce.fr
+// GESTION DES COOKIES - SOS-Impots.ai
 // ====================================
 
 // Vérifier et afficher le bandeau cookies au chargement
