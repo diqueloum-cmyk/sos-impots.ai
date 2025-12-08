@@ -1,6 +1,6 @@
-# sosdivorce.fr - Site Web avec Chatbot IA
+# sos-impots.ai - Site Web avec Chatbot IA
 
-Site web professionnel pour conseil juridique en divorce avec chatbot IA intégré et système d'inscription.
+Site web professionnel pour conseil fiscal en fiscalité avec chatbot IA intégré et système d'inscription.
 
 ## ⚠️ Migration Vercel Postgres - IMPORTANT
 
@@ -18,7 +18,7 @@ Site web professionnel pour conseil juridique en divorce avec chatbot IA intégr
 
 ## 🚀 Fonctionnalités
 
-- **Chatbot IA** spécialisé en droit du divorce (OpenAI GPT-3.5-turbo)
+- **Chatbot IA** spécialisé en droit fiscal et de la fiscalité (OpenAI GPT-3.5-turbo)
 - **Système de limitation** : 2 questions gratuites par utilisateur
 - **Inscription gratuite** pour questions illimitées
 - **Interface responsive** avec Tailwind CSS
@@ -29,10 +29,10 @@ Site web professionnel pour conseil juridique en divorce avec chatbot IA intégr
 ## 📁 Structure du projet
 
 ```
-sosdivorce-site/
+sos-impots-site/
 ├── index.html                  # Page principale
 ├── admin.html                  # Dashboard administrateur
-├── logo-sosdivorce.png         # Logo du site
+├── logo-sosimpots.png         # Logo du site
 ├── api/
 │   ├── chat.js                # API chatbot avec OpenAI
 │   ├── signup.js              # API inscription utilisateur
