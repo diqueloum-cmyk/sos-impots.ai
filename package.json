@@ -1,8 +1,8 @@
 {
-  "name": "sosdivorce-site",
+  "name": "sos-impots-site",
   "version": "1.0.0",
   "type": "module",
-  "description": "Site web sosdivorce.fr avec chatbot IA et système d'inscription",
+  "description": "Site web sos-impots.ai avec chatbot IA fiscal et système d'inscription",
   "main": "index.html",
   "scripts": {
     "build": "echo 'No build step required'",
