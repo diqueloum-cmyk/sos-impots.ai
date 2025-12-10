@@ -7,6 +7,20 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'system-ui', sans-serif; }
+    .tab-button.active {
+      color: #1e3a8a;
+      border-bottom-color: #1e3a8a;
+    }
+    .tab-content.hidden {
+      display: none;
+    }
+    .sub-tab-button.active {
+      background-color: #2563eb;
+      color: white;
+    }
+    .view-content.hidden {
+      display: none;
+    }
   </style>
 </head>
 <body class="bg-gray-100">
@@ -43,7 +57,22 @@
             Déconnexion
           </button>
         </div>
-      
+
+        <!-- Onglets -->
+        <div class="mb-8">
+          <div class="flex border-b border-gray-300">
+            <button id="tabStats" class="tab-button active px-6 py-3 font-semibold text-blue-900 border-b-2 border-blue-900">
+              Statistiques
+            </button>
+            <button id="tabConversations" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-blue-900">
+              Conversations
+            </button>
+          </div>
+        </div>
+
+        <!-- Contenu Onglet Statistiques -->
+        <div id="contentStats" class="tab-content">
+
       <!-- Statistiques -->
       <div class="grid md:grid-cols-3 gap-6 mb-8">
         <div class="bg-blue-50 p-4 rounded-lg">
@@ -80,6 +109,88 @@
 
       <!-- Messages d'erreur -->
       <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"></div>
+
+        </div>
+        <!-- Fin Contenu Onglet Statistiques -->
+
+        <!-- Contenu Onglet Conversations -->
+        <div id="contentConversations" class="tab-content hidden">
+          <!-- Sous-onglets -->
+          <div class="mb-6">
+            <div class="flex gap-4 mb-4">
+              <button id="viewByUser" class="sub-tab-button active px-4 py-2 bg-blue-600 text-white rounded">
+                Par utilisateur
+              </button>
+              <button id="viewAll" class="sub-tab-button px-4 py-2 bg-gray-300 text-gray-700 rounded">
+                Toutes les conversations
+              </button>
+            </div>
+
+            <!-- Filtres -->
+            <div class="flex gap-4 mb-6">
+              <select id="dateFilter" class="border rounded px-4 py-2">
+                <option value="">Toutes les dates</option>
+                <option value="7d">7 derniers jours</option>
+                <option value="30d">30 derniers jours</option>
+              </select>
+
+              <select id="userFilter" class="border rounded px-4 py-2">
+                <option value="">Tous les utilisateurs</option>
+              </select>
+
+              <button onclick="exportConversations()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Exporter CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Vue Par Utilisateur -->
+          <div id="viewUserContent" class="view-content">
+            <div id="userConvList" class="grid grid-cols-1 gap-4">
+              <!-- Liste des utilisateurs avec nombre de conversations -->
+            </div>
+          </div>
+
+          <!-- Vue Toutes les Conversations -->
+          <div id="viewAllContent" class="view-content hidden">
+            <div id="conversationsList" class="space-y-4">
+              <!-- Liste des conversations -->
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="flex justify-center gap-2 mt-6">
+              <!-- Boutons de pagination -->
+            </div>
+          </div>
+
+          <!-- Modal Détail Conversation -->
+          <div id="conversationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
+            <div class="flex justify-center min-h-screen p-4">
+              <div class="bg-white rounded-lg max-w-4xl w-full my-auto p-8">
+                <div class="flex justify-between items-center mb-6">
+                  <h2 id="modalTitle" class="text-2xl font-bold text-blue-900"></h2>
+                  <button onclick="closeConversationModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+
+                <div id="modalContent" class="space-y-4 max-h-96 overflow-y-auto">
+                  <!-- Messages Q&A -->
+                </div>
+
+                <div class="mt-6 flex gap-4">
+                  <button onclick="deleteConversation()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                    Supprimer
+                  </button>
+                  <button onclick="closeConversationModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <!-- Fin Contenu Onglet Conversations -->
+
       </div>
     </div>
   </div>
@@ -293,11 +404,366 @@
       const errorDiv = document.getElementById('errorMessage');
       errorDiv.textContent = message;
       errorDiv.classList.remove('hidden');
-      
+
       setTimeout(() => {
         errorDiv.classList.add('hidden');
       }, 5000);
     }
+
+    // ========================================
+    // GESTION DES CONVERSATIONS
+    // ========================================
+
+    let currentPage = 1;
+    let currentDateFilter = '';
+    let currentUserFilter = '';
+    let currentSessionId = null;
+
+    // Gestion des onglets principaux
+    document.getElementById('tabStats').addEventListener('click', () => {
+      switchTab('Stats');
+    });
+
+    document.getElementById('tabConversations').addEventListener('click', () => {
+      switchTab('Conversations');
+      loadConversations();
+    });
+
+    function switchTab(tab) {
+      // Désactiver tous les onglets
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+      // Activer l'onglet sélectionné
+      document.getElementById(`tab${tab}`).classList.add('active');
+      document.getElementById(`content${tab}`).classList.remove('hidden');
+    }
+
+    // Gestion des sous-onglets
+    document.getElementById('viewByUser').addEventListener('click', () => {
+      switchView('User');
+      loadUserConversations();
+    });
+
+    document.getElementById('viewAll').addEventListener('click', () => {
+      switchView('All');
+      loadAllConversations();
+    });
+
+    function switchView(view) {
+      document.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.view-content').forEach(content => content.classList.add('hidden'));
+
+      if (view === 'User') {
+        document.getElementById('viewByUser').classList.add('active');
+        document.getElementById('viewUserContent').classList.remove('hidden');
+      } else {
+        document.getElementById('viewAll').classList.add('active');
+        document.getElementById('viewAllContent').classList.remove('hidden');
+      }
+    }
+
+    // Charger les conversations
+    async function loadConversations() {
+      await loadUserFilter();
+      await loadUserConversations();
+    }
+
+    async function loadUserFilter() {
+      if (!adminKey) return;
+
+      try {
+        const response = await fetch('/api/signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ action: 'list', adminKey })
+        });
+
+        const data = await response.json();
+        const select = document.getElementById('userFilter');
+        select.innerHTML = '<option value="">Tous les utilisateurs</option>';
+
+        if (data.users) {
+          data.users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = `${user.firstName} ${user.lastName} (${user.email})`;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        showError('Erreur lors du chargement des utilisateurs: ' + error.message);
+      }
+    }
+
+    async function loadUserConversations() {
+      if (!adminKey) return;
+
+      try {
+        // Récupérer tous les utilisateurs
+        const usersResponse = await fetch('/api/signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ action: 'list', adminKey })
+        });
+        const usersData = await usersResponse.json();
+
+        const userList = document.getElementById('userConvList');
+        userList.innerHTML = '';
+
+        if (!usersData.users || usersData.users.length === 0) {
+          userList.innerHTML = '<p class="text-gray-500">Aucun utilisateur inscrit</p>';
+          return;
+        }
+
+        // Pour chaque utilisateur, récupérer le nombre de conversations
+        for (const user of usersData.users) {
+          const response = await fetch(`/api/admin-conversations?action=list&userId=${user.id}&limit=999`, {
+            headers: { 'X-Admin-Key': adminKey }
+          });
+          const data = await response.json();
+
+          const userCard = document.createElement('div');
+          userCard.className = 'bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition';
+          userCard.onclick = () => showUserConversations(user.id);
+
+          const nameH3 = document.createElement('h3');
+          nameH3.className = 'font-bold text-lg';
+          nameH3.textContent = `${user.firstName} ${user.lastName}`;
+
+          const emailP = document.createElement('p');
+          emailP.className = 'text-gray-600';
+          emailP.textContent = user.email;
+
+          const convP = document.createElement('p');
+          convP.className = 'text-blue-600 mt-2';
+          convP.textContent = `${data.total || 0} conversation(s)`;
+
+          userCard.appendChild(nameH3);
+          userCard.appendChild(emailP);
+          userCard.appendChild(convP);
+          userList.appendChild(userCard);
+        }
+      } catch (error) {
+        showError('Erreur lors du chargement des conversations: ' + error.message);
+      }
+    }
+
+    function showUserConversations(userId) {
+      currentUserFilter = userId;
+      document.getElementById('userFilter').value = userId;
+      switchView('All');
+      loadAllConversations();
+    }
+
+    async function loadAllConversations() {
+      if (!adminKey) return;
+
+      currentDateFilter = document.getElementById('dateFilter').value;
+      currentUserFilter = document.getElementById('userFilter').value;
+
+      let url = `/api/admin-conversations?action=list&page=${currentPage}&limit=50`;
+      if (currentDateFilter) url += `&dateFilter=${currentDateFilter}`;
+      if (currentUserFilter) url += `&userId=${currentUserFilter}`;
+
+      try {
+        const response = await fetch(url, {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+
+        const list = document.getElementById('conversationsList');
+        list.innerHTML = '';
+
+        if (!data.sessions || data.sessions.length === 0) {
+          list.innerHTML = '<p class="text-gray-500">Aucune conversation trouvée</p>';
+          return;
+        }
+
+        data.sessions.forEach(session => {
+          const card = document.createElement('div');
+          card.className = 'bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition';
+          card.onclick = () => showConversation(session.id, session.title);
+
+          const flexDiv = document.createElement('div');
+          flexDiv.className = 'flex justify-between items-start';
+
+          const contentDiv = document.createElement('div');
+          contentDiv.className = 'flex-1';
+
+          const titleH3 = document.createElement('h3');
+          titleH3.className = 'font-bold text-lg text-blue-900';
+          titleH3.textContent = session.title;
+
+          const userP = document.createElement('p');
+          userP.className = 'text-gray-600 text-sm';
+          userP.textContent = `${session.user_name} (${session.user_email})`;
+
+          const dateP = document.createElement('p');
+          dateP.className = 'text-gray-500 text-sm mt-2';
+          dateP.textContent = `${new Date(session.started_at).toLocaleDateString('fr-FR')} - ${session.message_count} message(s)`;
+
+          contentDiv.appendChild(titleH3);
+          contentDiv.appendChild(userP);
+          contentDiv.appendChild(dateP);
+          flexDiv.appendChild(contentDiv);
+          card.appendChild(flexDiv);
+          list.appendChild(card);
+        });
+
+        renderPagination(data.page, data.pages);
+      } catch (error) {
+        showError('Erreur lors du chargement des conversations: ' + error.message);
+      }
+    }
+
+    function renderPagination(page, totalPages) {
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      if (totalPages <= 1) return;
+
+      // Bouton précédent
+      if (page > 1) {
+        const prev = document.createElement('button');
+        prev.textContent = '← Précédent';
+        prev.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+        prev.onclick = () => {
+          currentPage--;
+          loadAllConversations();
+        };
+        pagination.appendChild(prev);
+      }
+
+      // Numéros de pages
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === page || i === 1 || i === totalPages || Math.abs(i - page) <= 2) {
+          const pageBtn = document.createElement('button');
+          pageBtn.textContent = i;
+          pageBtn.className = i === page
+            ? 'px-4 py-2 bg-blue-900 text-white rounded'
+            : 'px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400';
+          pageBtn.onclick = () => {
+            currentPage = i;
+            loadAllConversations();
+          };
+          pagination.appendChild(pageBtn);
+        } else if (Math.abs(i - page) === 3) {
+          const dots = document.createElement('span');
+          dots.textContent = '...';
+          dots.className = 'px-2';
+          pagination.appendChild(dots);
+        }
+      }
+
+      // Bouton suivant
+      if (page < totalPages) {
+        const next = document.createElement('button');
+        next.textContent = 'Suivant →';
+        next.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+        next.onclick = () => {
+          currentPage++;
+          loadAllConversations();
+        };
+        pagination.appendChild(next);
+      }
+    }
+
+    async function showConversation(sessionId, title) {
+      if (!adminKey) return;
+
+      currentSessionId = sessionId;
+
+      try {
+        const response = await fetch(`/api/admin-conversations?action=messages&sessionId=${sessionId}`, {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+
+        document.getElementById('modalTitle').textContent = title;
+        const content = document.getElementById('modalContent');
+        content.innerHTML = '';
+
+        if (!data.messages || data.messages.length === 0) {
+          content.innerHTML = '<p class="text-gray-500">Aucun message dans cette conversation</p>';
+        } else {
+          data.messages.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = msg.role === 'user'
+              ? 'bg-blue-50 p-4 rounded-lg'
+              : 'bg-gray-50 p-4 rounded-lg';
+
+            const roleDiv = document.createElement('div');
+            roleDiv.className = `font-bold text-sm mb-2 ${msg.role === 'user' ? 'text-blue-900' : 'text-gray-700'}`;
+            roleDiv.textContent = msg.role === 'user' ? 'Question' : 'Réponse';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'text-gray-800';
+            contentDiv.textContent = msg.content;
+
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'text-xs text-gray-500 mt-2';
+            dateDiv.textContent = new Date(msg.created_at).toLocaleString('fr-FR');
+
+            msgDiv.appendChild(roleDiv);
+            msgDiv.appendChild(contentDiv);
+            msgDiv.appendChild(dateDiv);
+            content.appendChild(msgDiv);
+          });
+        }
+
+        document.getElementById('conversationModal').classList.remove('hidden');
+      } catch (error) {
+        showError('Erreur lors du chargement de la conversation: ' + error.message);
+      }
+    }
+
+    function closeConversationModal() {
+      document.getElementById('conversationModal').classList.add('hidden');
+      currentSessionId = null;
+    }
+
+    async function deleteConversation() {
+      if (!currentSessionId || !adminKey) return;
+
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cette conversation ?')) return;
+
+      try {
+        await fetch(`/api/admin-conversations?sessionId=${currentSessionId}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+
+        closeConversationModal();
+        loadAllConversations();
+      } catch (error) {
+        showError('Erreur lors de la suppression: ' + error.message);
+      }
+    }
+
+    async function exportConversations() {
+      if (!adminKey) return;
+
+      const dateFilter = document.getElementById('dateFilter').value;
+      window.location.href = `/api/admin-conversations?action=export&dateFilter=${dateFilter}&adminKey=${adminKey}`;
+    }
+
+    // Event listeners pour les filtres
+    document.getElementById('dateFilter').addEventListener('change', () => {
+      currentPage = 1;
+      loadAllConversations();
+    });
+
+    document.getElementById('userFilter').addEventListener('change', () => {
+      currentPage = 1;
+      loadAllConversations();
+    });
   </script>
 </body>
 </html>
