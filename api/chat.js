@@ -132,13 +132,17 @@ export default async function handler(req, res) {
 
         // Préfixer le message avec le rappel du format obligatoire
         const formatReminder = `RAPPEL FORMAT OBLIGATOIRE : Tu DOIS suivre cette structure EXACTE pour ta réponse :
-## 1. Contexte / Question de l'utilisateur
-## 2. Hypothèses formulées si des informations manquent
-## 3. Analyse fiscale (articles du Code général des impôts, sources officielles)
-## 4. Options possibles
-## 5. Recommandation
-## 6. Points de vigilance fiscaux
-## 7. Prochaines étapes / Questions complémentaires
+
+FORMAT STRUCTURÉ OBLIGATOIRE DES RÉPONSES
+1. Contexte / demande de l'utilisateur
+2. Hypothèses prises si des informations manquent
+3. Analyse juridique synthétique
+   • Articles de loi cités et source
+   • Date de vérification si applicable
+4. Options possibles
+5. Recommandation synthétique
+6. Points de vigilance
+7. Et maintenant ? (question / étape suivante)
 
 Question de l'utilisateur :
 ${message}`;
@@ -173,7 +177,7 @@ ${message}`;
           body: JSON.stringify({
             assistant_id: ASSISTANT_ID,
             temperature: 0,
-            additional_instructions: "IMPORTANT : Respecte STRICTEMENT le format structuré en 7 sections pour CHAQUE réponse fiscale. Cite toujours les articles du CGI pertinents dans la section 3. Ne dévie JAMAIS de cette structure."
+            additional_instructions: "IMPORTANT : Respecte STRICTEMENT le format structuré en 7 sections pour CHAQUE réponse fiscale. Dans la section 3 'Analyse juridique synthétique', cite toujours les articles de loi pertinents avec leur source et la date de vérification si applicable. Ne dévie JAMAIS de cette structure."
           })
         });
 
