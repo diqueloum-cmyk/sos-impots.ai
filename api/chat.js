@@ -131,18 +131,17 @@ export default async function handler(req, res) {
         const threadId = threadData.id;
 
         // Préfixer le message avec le rappel du format obligatoire
-        const formatReminder = `RAPPEL FORMAT OBLIGATOIRE : Tu DOIS suivre cette structure EXACTE pour ta réponse :
+        const formatReminder = `RAPPEL FORMAT OBLIGATOIRE : Tu DOIS suivre cette structure EXACTE pour ta réponse, SANS afficher les titres des sections :
 
-FORMAT STRUCTURÉ OBLIGATOIRE DES RÉPONSES
-1. Contexte / demande de l'utilisateur
-2. Hypothèses prises si des informations manquent
-3. Analyse juridique synthétique
-   • Articles de loi cités et source
-   • Date de vérification si applicable
-4. Options possibles
-5. Recommandation synthétique
-6. Points de vigilance
-7. Et maintenant ? (question / étape suivante)
+1. Commence par reformuler le contexte / demande de l'utilisateur
+2. Indique les hypothèses prises si des informations manquent
+3. Fournis une analyse juridique synthétique avec articles de loi cités, source et date de vérification si applicable
+4. Présente les options possibles
+5. Donne une recommandation synthétique
+6. Liste les points de vigilance
+7. Termine par une question ou étape suivante
+
+IMPORTANT : Ne mets PAS de titres de sections (comme "1. Contexte", "2. Hypothèses", etc.). Rédige directement le contenu en suivant l'ordre.
 
 Question de l'utilisateur :
 ${message}`;
@@ -177,7 +176,7 @@ ${message}`;
           body: JSON.stringify({
             assistant_id: ASSISTANT_ID,
             temperature: 0,
-            additional_instructions: "IMPORTANT : Respecte STRICTEMENT le format structuré en 7 sections pour CHAQUE réponse fiscale. Dans la section 3 'Analyse juridique synthétique', cite toujours les articles de loi pertinents avec leur source et la date de vérification si applicable. Ne dévie JAMAIS de cette structure."
+            additional_instructions: "IMPORTANT : Respecte STRICTEMENT le format structuré en 7 parties pour CHAQUE réponse fiscale, SANS jamais afficher les titres des sections. Rédige un texte fluide qui suit naturellement l'ordre : contexte, hypothèses, analyse juridique avec articles et sources, options, recommandation, vigilance, question/étape suivante. Ne dévie JAMAIS de cette structure."
           })
         });
 
