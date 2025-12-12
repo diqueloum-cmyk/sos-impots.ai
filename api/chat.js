@@ -130,6 +130,19 @@ export default async function handler(req, res) {
         const threadData = await threadResponse.json();
         const threadId = threadData.id;
 
+        // Préfixer le message avec le rappel du format obligatoire
+        const formatReminder = `RAPPEL FORMAT OBLIGATOIRE : Tu DOIS suivre cette structure EXACTE pour ta réponse :
+## 1. Contexte / Question de l'utilisateur
+## 2. Hypothèses formulées si des informations manquent
+## 3. Analyse fiscale (articles du Code général des impôts, sources officielles)
+## 4. Options possibles
+## 5. Recommandation
+## 6. Points de vigilance fiscaux
+## 7. Prochaines étapes / Questions complémentaires
+
+Question de l'utilisateur :
+${message}`;
+
         // Étape 2: Ajouter le message au thread
         const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
           method: 'POST',
@@ -140,7 +153,7 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             role: 'user',
-            content: message
+            content: formatReminder
           })
         });
 
@@ -158,7 +171,9 @@ export default async function handler(req, res) {
             'OpenAI-Beta': 'assistants=v2'
           },
           body: JSON.stringify({
-            assistant_id: ASSISTANT_ID
+            assistant_id: ASSISTANT_ID,
+            temperature: 0,
+            additional_instructions: "IMPORTANT : Respecte STRICTEMENT le format structuré en 7 sections pour CHAQUE réponse fiscale. Cite toujours les articles du CGI pertinents dans la section 3. Ne dévie JAMAIS de cette structure."
           })
         });
 

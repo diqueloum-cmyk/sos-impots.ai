@@ -1023,9 +1023,9 @@
       messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
       
       const messageContent = document.createElement('div');
-      messageContent.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-        sender === 'user' 
-          ? 'bg-blue-600 text-white' 
+      messageContent.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-line ${
+        sender === 'user'
+          ? 'bg-blue-600 text-white'
           : 'bg-gray-200 text-gray-800'
       }`;
       
@@ -1070,7 +1070,7 @@
       messageDiv.className = 'flex justify-start';
 
       const messageContent = document.createElement('div');
-      messageContent.className = 'max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-200 text-gray-800';
+      messageContent.className = 'max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-200 text-gray-800 whitespace-pre-line';
 
       messageDiv.appendChild(messageContent);
       chatContainer.appendChild(messageDiv);
@@ -1433,7 +1433,7 @@
       messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
 
       const messageContent = document.createElement('div');
-      messageContent.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+      messageContent.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-line ${
         sender === 'user'
           ? 'bg-blue-600 text-white'
           : 'bg-gray-200 text-gray-800'
