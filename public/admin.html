@@ -126,7 +126,6 @@
               </button>
               <button id="viewAnonymous" class="sub-tab-button px-4 py-2 bg-gray-300 text-gray-700 rounded">
                 Utilisateurs anonymes
-                <span id="anonymousCount" class="ml-2 bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs">0</span>
               </button>
             </div>
 
@@ -834,7 +833,6 @@
         if (data.success) {
           renderAnonymousConversations(data.conversations);
           renderAnonymousPagination(data.pagination);
-          document.getElementById('anonymousCount').textContent = data.pagination.total;
         } else {
           showError('Erreur: ' + data.error);
         }
