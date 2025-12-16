@@ -17,6 +17,9 @@
     .tab-content.hidden {
       display: none;
     }
+    .sub-tab-button {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
     .sub-tab-button.active {
       background-color: #2563eb;
       color: white;
@@ -496,17 +499,29 @@
     });
 
     function switchView(view) {
-      document.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
+      // Désactiver tous les sous-onglets (remettre en gris)
+      document.querySelectorAll('.sub-tab-button').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-600', 'text-white');
+        btn.classList.add('bg-gray-300', 'text-gray-700');
+      });
+
+      // Cacher tout le contenu
       document.querySelectorAll('.view-content').forEach(content => content.classList.add('hidden'));
 
       if (view === 'User') {
-        document.getElementById('viewByUser').classList.add('active');
+        const btn = document.getElementById('viewByUser');
+        btn.classList.add('active', 'bg-blue-600', 'text-white');
+        btn.classList.remove('bg-gray-300', 'text-gray-700');
         document.getElementById('viewUserContent').classList.remove('hidden');
       } else if (view === 'All') {
-        document.getElementById('viewAll').classList.add('active');
+        const btn = document.getElementById('viewAll');
+        btn.classList.add('active', 'bg-blue-600', 'text-white');
+        btn.classList.remove('bg-gray-300', 'text-gray-700');
         document.getElementById('viewAllContent').classList.remove('hidden');
       } else if (view === 'Anonymous') {
-        document.getElementById('viewAnonymous').classList.add('active');
+        const btn = document.getElementById('viewAnonymous');
+        btn.classList.add('active', 'bg-blue-600', 'text-white');
+        btn.classList.remove('bg-gray-300', 'text-gray-700');
         document.getElementById('viewAnonymousContent').classList.remove('hidden');
       }
     }
