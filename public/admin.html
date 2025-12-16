@@ -14,11 +14,9 @@
     .tab-content.hidden {
       display: none;
     }
-    .sub-tab-button {
-      transition: color 0.3s ease, border-color 0.3s ease;
-    }
     .sub-tab-button.active {
-      color: #1e3a8a;
+      background-color: #2563eb;
+      color: white;
     }
     .view-content.hidden {
       display: none;
@@ -119,14 +117,14 @@
         <div id="contentConversations" class="tab-content hidden">
           <!-- Sous-onglets -->
           <div class="mb-6">
-            <div class="flex gap-0 mb-4 border-b border-gray-300">
-              <button id="viewByUser" class="sub-tab-button active px-6 py-3 font-semibold text-blue-900 border-b-2 border-blue-900">
+            <div class="flex gap-4 mb-4">
+              <button id="viewByUser" class="sub-tab-button active px-4 py-2 bg-blue-600 text-white rounded">
                 Par utilisateur
               </button>
-              <button id="viewAll" class="sub-tab-button px-6 py-3 font-semibold text-gray-600 hover:text-blue-900">
+              <button id="viewAll" class="sub-tab-button px-4 py-2 bg-gray-300 text-gray-700 rounded">
                 Toutes les conversations
               </button>
-              <button id="viewAnonymous" class="sub-tab-button px-6 py-3 font-semibold text-gray-600 hover:text-blue-900">
+              <button id="viewAnonymous" class="sub-tab-button px-4 py-2 bg-gray-300 text-gray-700 rounded">
                 Utilisateurs anonymes
               </button>
             </div>
@@ -490,29 +488,17 @@
     });
 
     function switchView(view) {
-      // Désactiver tous les sous-onglets
-      document.querySelectorAll('.sub-tab-button').forEach(btn => {
-        btn.classList.remove('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
-        btn.classList.add('text-gray-600');
-      });
-
-      // Cacher tout le contenu
+      document.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.view-content').forEach(content => content.classList.add('hidden'));
 
       if (view === 'User') {
-        const btn = document.getElementById('viewByUser');
-        btn.classList.add('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
-        btn.classList.remove('text-gray-600');
+        document.getElementById('viewByUser').classList.add('active');
         document.getElementById('viewUserContent').classList.remove('hidden');
       } else if (view === 'All') {
-        const btn = document.getElementById('viewAll');
-        btn.classList.add('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
-        btn.classList.remove('text-gray-600');
+        document.getElementById('viewAll').classList.add('active');
         document.getElementById('viewAllContent').classList.remove('hidden');
       } else if (view === 'Anonymous') {
-        const btn = document.getElementById('viewAnonymous');
-        btn.classList.add('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
-        btn.classList.remove('text-gray-600');
+        document.getElementById('viewAnonymous').classList.add('active');
         document.getElementById('viewAnonymousContent').classList.remove('hidden');
       }
     }
