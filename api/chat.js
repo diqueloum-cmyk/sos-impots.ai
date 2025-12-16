@@ -1,9 +1,11 @@
+import crypto from 'crypto';
 import { parseCookies, setCorsHeaders, handleCorsPreflight, createCookie } from '../lib/utils.js';
 import {
   getCachedAnswer,
   saveCachedAnswer,
   findUserByEmail,
   createConversationSession,
+  createAnonymousConversationSession,
   addConversationMessage
 } from '../lib/db.js';
 import {
@@ -268,42 +270,71 @@ ${message}`;
     const responseTimeMs = Date.now() - startTime;
 
     // ====================================
-    // SAUVEGARDER LA CONVERSATION (si utilisateur connecté)
+    // GESTION IDENTIFIANT ANONYME
+    // ====================================
+    let anonymousId = null;
+    let needsAnonymousCookie = false;
+
+    if (!currentUser) {
+      // Récupérer ou générer l'identifiant anonyme
+      anonymousId = cookies.anonymous_session_id;
+      if (!anonymousId) {
+        anonymousId = crypto.randomUUID();
+        needsAnonymousCookie = true;
+        logger.debug('Nouvel identifiant anonyme généré:', anonymousId);
+      } else {
+        logger.debug('Identifiant anonyme existant:', anonymousId);
+      }
+    }
+
+    // ====================================
+    // SAUVEGARDER LA CONVERSATION (utilisateurs enregistrés ET anonymes)
     // ====================================
     let conversationSessionId = sessionId;
 
-    if (currentUser) {
-      try {
-        // Si pas de sessionId, créer une nouvelle session
-        if (!conversationSessionId) {
+    try {
+      // Créer une nouvelle session si nécessaire
+      if (!conversationSessionId) {
+        if (currentUser) {
+          // Session pour utilisateur enregistré
           conversationSessionId = await createConversationSession(currentUser.id, message);
-          logger.debug('Nouvelle session créée:', conversationSessionId);
+          logger.debug('Nouvelle session utilisateur créée:', conversationSessionId);
+        } else {
+          // Session pour utilisateur anonyme
+          conversationSessionId = await createAnonymousConversationSession(
+            anonymousId,
+            clientIp,
+            req.headers['user-agent'] || 'Unknown',
+            message
+          );
+          logger.debug('Nouvelle session anonyme créée:', conversationSessionId);
         }
-
-        // Sauvegarder la question de l'utilisateur
-        await addConversationMessage(conversationSessionId, 'user', message, {
-          tokensUsed: 0,
-          responseTimeMs: null,
-          wasCached: false
-        });
-
-        // Sauvegarder la réponse de l'assistant
-        await addConversationMessage(conversationSessionId, 'assistant', answer, {
-          tokensUsed,
-          responseTimeMs,
-          wasCached: fromCache
-        });
-
-        logger.info('Conversation sauvegardée:', {
-          userId: currentUser.id,
-          sessionId: conversationSessionId,
-          cached: fromCache
-        });
-
-      } catch (error) {
-        // Ne pas bloquer la réponse si la sauvegarde échoue
-        logger.error('Erreur sauvegarde conversation:', error);
       }
+
+      // Sauvegarder la question de l'utilisateur
+      await addConversationMessage(conversationSessionId, 'user', message, {
+        tokensUsed: 0,
+        responseTimeMs: null,
+        wasCached: false
+      });
+
+      // Sauvegarder la réponse de l'assistant
+      await addConversationMessage(conversationSessionId, 'assistant', answer, {
+        tokensUsed,
+        responseTimeMs,
+        wasCached: fromCache
+      });
+
+      logger.info('Conversation sauvegardée:', {
+        userId: currentUser ? currentUser.id : null,
+        anonymousId: currentUser ? null : anonymousId,
+        sessionId: conversationSessionId,
+        cached: fromCache
+      });
+
+    } catch (error) {
+      // Ne pas bloquer la réponse si la sauvegarde échoue
+      logger.error('Erreur sauvegarde conversation:', error);
     }
 
     // Incrémenter le compteur de questions si non inscrit
@@ -312,10 +343,19 @@ ${message}`;
 
     // Définir les cookies
     if (!registered) {
-      const cookie = createCookie('q_used', newQUsed.toString(), {
-        maxAge: 24 * 60 * 60 // 24 heures
-      });
-      res.setHeader('Set-Cookie', cookie);
+      const cookies = [
+        createCookie('q_used', newQUsed.toString(), { maxAge: 24 * 60 * 60 })
+      ];
+
+      // Ajouter le cookie d'identifiant anonyme si nécessaire
+      if (needsAnonymousCookie) {
+        cookies.push(
+          createCookie('anonymous_session_id', anonymousId, { maxAge: 24 * 60 * 60 })
+        );
+        logger.debug('Cookie anonymous_session_id défini');
+      }
+
+      res.setHeader('Set-Cookie', cookies);
     }
 
     return res.status(200).json({

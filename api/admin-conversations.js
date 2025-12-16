@@ -3,6 +3,10 @@
 
 import { sql } from '@vercel/postgres';
 import { logInfo, sendError, sendSuccess } from '../lib/utils.js';
+import {
+  getAnonymousConversationSessions,
+  countAnonymousConversationSessions
+} from '../lib/db.js';
 
 export default async function handler(req, res) {
   // Vérifier l'authentification admin
@@ -20,6 +24,8 @@ export default async function handler(req, res) {
     switch(action) {
       case 'list':
         return await handleList(req, res, { page, limit, dateFilter, userId });
+      case 'listAnonymous':
+        return await handleListAnonymous(req, res, { page, limit, dateFilter });
       case 'messages':
         if (!sessionId) {
           return sendError(res, 400, 'sessionId requis');
@@ -46,7 +52,7 @@ async function handleList(req, res, { page, limit, dateFilter, userId }) {
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   // Construire les conditions WHERE
-  let whereConditions = ['1=1'];
+  let whereConditions = ['s.user_id IS NOT NULL']; // Exclure les sessions anonymes
   const params = [];
 
   // Filtre par date
@@ -99,6 +105,36 @@ async function handleList(req, res, { page, limit, dateFilter, userId }) {
     page: parseInt(page),
     pages
   });
+}
+
+/**
+ * Récupère la liste des conversations anonymes avec pagination
+ */
+async function handleListAnonymous(req, res, { page, limit, dateFilter }) {
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  try {
+    const conversations = await getAnonymousConversationSessions(
+      parseInt(limit),
+      offset,
+      dateFilter
+    );
+
+    const total = await countAnonymousConversationSessions(dateFilter);
+
+    return sendSuccess(res, {
+      conversations,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    logInfo('error', 'Erreur handleListAnonymous', { error: error.message });
+    return sendError(res, 500, error.message);
+  }
 }
 
 /**

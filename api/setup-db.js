@@ -2,7 +2,7 @@
 // À exécuter UNE SEULE FOIS après avoir configuré Vercel Postgres
 // URL: https://votre-site.vercel.app/api/setup-db
 
-import { createUsersTable, createCacheTable, createConversationTables } from '../lib/db.js';
+import { createUsersTable, createCacheTable, createConversationTables, migrateConversationTablesForAnonymous } from '../lib/db.js';
 import logger from '../lib/logger.js';
 
 export default async function handler(req, res) {
@@ -29,6 +29,31 @@ export default async function handler(req, res) {
     });
   }
 
+  // Récupérer l'action (setup ou migrate-anonymous)
+  const action = req.query.action || 'setup';
+
+  // Action : migrate-anonymous
+  if (action === 'migrate-anonymous') {
+    try {
+      const result = await migrateConversationTablesForAnonymous();
+      return res.status(200).json({
+        success: true,
+        action: 'migrate-anonymous',
+        message: 'Migration des conversations anonymes réussie',
+        details: result,
+        info: {
+          changes: result.changes
+        }
+      });
+    } catch (error) {
+      logger.error('Erreur migration:', error);
+      return res.status(500).json({
+        error: error.message
+      });
+    }
+  }
+
+  // Action par défaut : setup
   try {
     logger.info('Initialisation de la base de données...');
 
