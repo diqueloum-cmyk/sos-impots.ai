@@ -15,6 +15,17 @@
     .typing-cursor { animation: blink 1s infinite; }
     @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
 
+    /* Prevent flash of unauthenticated content */
+    body.checking-auth #heroSection,
+    body.checking-auth #about,
+    body.checking-auth #features,
+    body.checking-auth #testimonials,
+    body.checking-auth #faq,
+    body.checking-auth #contact,
+    body.checking-auth #mainNav {
+      visibility: hidden;
+    }
+
     /* Conversation History Styles */
     .conversation-sidebar {
       transition: transform 0.3s ease-in-out;
@@ -62,7 +73,7 @@
 
   </style>
 </head>
-<body class="bg-white text-gray-800">
+<body class="bg-white text-gray-800 checking-auth">
 
   <!-- Cookie Banner and Modal will be created dynamically by cookies.js -->
 
@@ -552,6 +563,9 @@
           section.style.display = 'none';
         }
       });
+
+      // Retirer la classe checking-auth
+      document.body.classList.remove('checking-auth');
     }
 
     // Masquer le statut utilisateur
@@ -576,6 +590,9 @@
           section.style.display = 'block';
         }
       });
+
+      // Retirer la classe checking-auth
+      document.body.classList.remove('checking-auth');
     }
 
     // Lire les cookies (helper function)
