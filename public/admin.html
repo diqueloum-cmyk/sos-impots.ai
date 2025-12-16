@@ -7,6 +7,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'system-ui', sans-serif; }
+    .tab-button {
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
     .tab-button.active {
       color: #1e3a8a;
       border-bottom-color: #1e3a8a;
@@ -463,11 +466,16 @@
 
     function switchTab(tab) {
       // Désactiver tous les onglets
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
+        btn.classList.add('text-gray-600');
+      });
       document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
 
       // Activer l'onglet sélectionné
-      document.getElementById(`tab${tab}`).classList.add('active');
+      const selectedTab = document.getElementById(`tab${tab}`);
+      selectedTab.classList.add('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
+      selectedTab.classList.remove('text-gray-600');
       document.getElementById(`content${tab}`).classList.remove('hidden');
     }
 
