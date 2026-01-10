@@ -412,6 +412,13 @@
 
         <!-- Formulaire d'inscription -->
         <form id="registerForm" onsubmit="submitRegister(event)" class="hidden space-y-4">
+          <!-- Message après 2 questions gratuites -->
+          <div id="freeQuestionsMessage" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 hidden">
+            <p class="text-sm text-green-800">
+              <strong>✓ Vous avez posé vos 2 questions gratuites</strong>, inscrivez-vous pour continuer à poser vos questions, toujours gratuitement.
+            </p>
+          </div>
+
           <!-- Avantages de l'inscription -->
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <h3 class="font-semibold text-blue-900 mb-2 flex items-center">
@@ -644,11 +651,12 @@
       const registerForm = document.getElementById('registerForm');
       const loginTab = document.getElementById('loginTab');
       const registerTab = document.getElementById('registerTab');
-      
+      const freeQuestionsMessage = document.getElementById('freeQuestionsMessage');
+
       modal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
       document.getElementById('authMessage').classList.add('hidden');
-      
+
       if (type === 'login') {
         title.textContent = 'Connexion';
         loginForm.classList.remove('hidden');
@@ -657,6 +665,7 @@
         loginTab.classList.remove('border-transparent', 'text-gray-500');
         registerTab.classList.remove('border-blue-600', 'text-blue-600');
         registerTab.classList.add('border-transparent', 'text-gray-500');
+        freeQuestionsMessage.classList.add('hidden');
       } else {
         title.textContent = 'Inscription';
         loginForm.classList.add('hidden');
@@ -665,6 +674,13 @@
         registerTab.classList.remove('border-transparent', 'text-gray-500');
         loginTab.classList.remove('border-blue-600', 'text-blue-600');
         loginTab.classList.add('border-transparent', 'text-gray-500');
+
+        // Afficher le message si l'utilisateur a utilisé ses 2 questions gratuites
+        if (questionsUsed >= maxFreeQuestions) {
+          freeQuestionsMessage.classList.remove('hidden');
+        } else {
+          freeQuestionsMessage.classList.add('hidden');
+        }
       }
     }
 
