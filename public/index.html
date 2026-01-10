@@ -627,11 +627,11 @@
 
         const remaining = maxFreeQuestions - questionsUsed;
         if (remaining === 2) {
-          counterElement.textContent = '2 questions offertes. Créez un compte gratuit pour continuer ensuite, toujours gratuitement.';
+          counterElement.textContent = '2 questions offertes. Ensuite, nous vous demanderons de vous inscrire pour continuer à poser vos questions toujours gratuitement.';
         } else if (remaining === 1) {
-          counterElement.textContent = '1 question offerte restante. Créez un compte gratuit pour continuer ensuite, toujours gratuitement.';
+          counterElement.textContent = '1 question offerte restante. Ensuite, nous vous demanderons de vous inscrire pour continuer à poser vos questions toujours gratuitement.';
         } else {
-          counterElement.textContent = 'Créez un compte gratuit pour continuer, toujours gratuitement.';
+          counterElement.textContent = 'Veuillez vous inscrire pour continuer à poser vos questions toujours gratuitement.';
         }
       }
     }
@@ -805,8 +805,8 @@
         const chatContainer = document.getElementById('chatContainer');
         chatContainer.innerHTML = `
           <div class="text-center text-gray-500">
-            <p>Posez votre question juridique ci-dessous...</p>
-            <p class="text-sm mt-2" id="questionCounter">2 questions offertes. Créez un compte gratuit pour continuer ensuite, toujours gratuitement.</p>
+            <p>Notre IA spécialisée va vous répondre.</p>
+            <p class="text-sm mt-2" id="questionCounter">2 questions offertes. Ensuite, nous vous demanderons de vous inscrire pour continuer à poser vos questions toujours gratuitement.</p>
           </div>
         `;
 
