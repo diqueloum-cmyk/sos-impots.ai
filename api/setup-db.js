@@ -2,7 +2,7 @@
 // À exécuter UNE SEULE FOIS après avoir configuré Vercel Postgres
 // URL: https://votre-site.vercel.app/api/setup-db
 
-import { createUsersTable, createCacheTable, createConversationTables, migrateConversationTablesForAnonymous } from '../lib/db.js';
+import { createUsersTable, createCacheTable, createConversationTables, migrateConversationTablesForAnonymous, migrateAddOpenaiThreadId } from '../lib/db.js';
 import logger from '../lib/logger.js';
 
 export default async function handler(req, res) {
@@ -47,6 +47,24 @@ export default async function handler(req, res) {
       });
     } catch (error) {
       logger.error('Erreur migration:', error);
+      return res.status(500).json({
+        error: error.message
+      });
+    }
+  }
+
+  // Action : migrate-openai-thread
+  if (action === 'migrate-openai-thread') {
+    try {
+      const result = await migrateAddOpenaiThreadId();
+      return res.status(200).json({
+        success: true,
+        action: 'migrate-openai-thread',
+        message: 'Migration openai_thread_id réussie',
+        details: result
+      });
+    } catch (error) {
+      logger.error('Erreur migration openai_thread_id:', error);
       return res.status(500).json({
         error: error.message
       });
@@ -126,7 +144,8 @@ export default async function handler(req, res) {
               'title (VARCHAR 255)',
               'started_at (TIMESTAMP)',
               'last_message_at (TIMESTAMP)',
-              'message_count (INTEGER)'
+              'message_count (INTEGER)',
+              'openai_thread_id (TEXT)'
             ],
             indexes: [
               'idx_session_user'

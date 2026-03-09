@@ -6,7 +6,9 @@ import {
   findUserByEmail,
   createConversationSession,
   createAnonymousConversationSession,
-  addConversationMessage
+  addConversationMessage,
+  getSessionThreadId,
+  updateSessionThreadId
 } from '../lib/db.js';
 import {
   chatRateLimiter,
@@ -99,6 +101,47 @@ export default async function handler(req, res) {
     // Mesurer le temps de réponse
     const startTime = Date.now();
 
+    // ====================================
+    // GESTION IDENTIFIANT ANONYME
+    // ====================================
+    let anonymousId = null;
+    let needsAnonymousCookie = false;
+
+    if (!currentUser) {
+      anonymousId = cookies.anonymous_session_id;
+      if (!anonymousId) {
+        anonymousId = crypto.randomUUID();
+        needsAnonymousCookie = true;
+        logger.debug('Nouvel identifiant anonyme généré:', anonymousId);
+      } else {
+        logger.debug('Identifiant anonyme existant:', anonymousId);
+      }
+    }
+
+    // ====================================
+    // CRÉER OU RÉCUPÉRER LA SESSION (avant l'appel OpenAI pour récupérer le threadId)
+    // ====================================
+    let conversationSessionId = sessionId;
+
+    try {
+      if (!conversationSessionId) {
+        if (currentUser) {
+          conversationSessionId = await createConversationSession(currentUser.id, message);
+          logger.debug('Nouvelle session utilisateur créée:', conversationSessionId);
+        } else {
+          conversationSessionId = await createAnonymousConversationSession(
+            anonymousId,
+            clientIp,
+            req.headers['user-agent'] || 'Unknown',
+            message
+          );
+          logger.debug('Nouvelle session anonyme créée:', conversationSessionId);
+        }
+      }
+    } catch (error) {
+      logger.error('Erreur création session:', error);
+    }
+
     // Vérifier le cache d'abord
     const cachedResponse = await getCachedAnswer(message);
     let answer;
@@ -113,24 +156,56 @@ export default async function handler(req, res) {
     } else {
       // Pas de cache, utiliser l'Assistant OpenAI
       try {
-        // Étape 1: Créer un thread
-        const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-            'OpenAI-Beta': 'assistants=v2'
-          },
-          body: JSON.stringify({})
-        });
+        const openaiHeaders = {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        };
 
-        if (!threadResponse.ok) {
-          logger.error('OpenAI Thread Creation Error:', threadResponse.status);
-          throw new Error('Erreur lors de la création du thread');
+        // Étape 1: Récupérer ou créer un thread OpenAI
+        let threadId = null;
+
+        if (conversationSessionId) {
+          threadId = await getSessionThreadId(conversationSessionId);
         }
 
-        const threadData = await threadResponse.json();
-        const threadId = threadData.id;
+        if (threadId) {
+          // Vérifier que le thread existe toujours (fallback si expiré/supprimé)
+          const checkResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}`, {
+            headers: openaiHeaders
+          });
+
+          if (!checkResponse.ok) {
+            logger.warn('Thread OpenAI expiré ou supprimé, création d\'un nouveau:', threadId);
+            threadId = null;
+          }
+        }
+
+        if (!threadId) {
+          // Créer un nouveau thread
+          const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+            method: 'POST',
+            headers: openaiHeaders,
+            body: JSON.stringify({})
+          });
+
+          if (!threadResponse.ok) {
+            logger.error('OpenAI Thread Creation Error:', threadResponse.status);
+            throw new Error('Erreur lors de la création du thread');
+          }
+
+          const threadData = await threadResponse.json();
+          threadId = threadData.id;
+
+          // Sauvegarder le threadId dans la session
+          if (conversationSessionId) {
+            await updateSessionThreadId(conversationSessionId, threadId);
+          }
+
+          logger.debug('Nouveau thread OpenAI créé:', threadId);
+        } else {
+          logger.debug('Thread OpenAI réutilisé:', threadId);
+        }
 
         // Préfixer le message avec le rappel du format obligatoire
         const formatReminder = `RAPPEL FORMAT OBLIGATOIRE : Tu DOIS suivre cette structure EXACTE pour ta réponse, SANS afficher les titres des sections :
@@ -151,11 +226,7 @@ ${message}`;
         // Étape 2: Ajouter le message au thread
         const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-            'OpenAI-Beta': 'assistants=v2'
-          },
+          headers: openaiHeaders,
           body: JSON.stringify({
             role: 'user',
             content: formatReminder
@@ -170,11 +241,7 @@ ${message}`;
         // Étape 3: Exécuter l'assistant
         const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-            'OpenAI-Beta': 'assistants=v2'
-          },
+          headers: openaiHeaders,
           body: JSON.stringify({
             assistant_id: ASSISTANT_ID,
             temperature: 0,
@@ -270,68 +337,31 @@ ${message}`;
     const responseTimeMs = Date.now() - startTime;
 
     // ====================================
-    // GESTION IDENTIFIANT ANONYME
+    // SAUVEGARDER LES MESSAGES DE LA CONVERSATION
     // ====================================
-    let anonymousId = null;
-    let needsAnonymousCookie = false;
-
-    if (!currentUser) {
-      // Récupérer ou générer l'identifiant anonyme
-      anonymousId = cookies.anonymous_session_id;
-      if (!anonymousId) {
-        anonymousId = crypto.randomUUID();
-        needsAnonymousCookie = true;
-        logger.debug('Nouvel identifiant anonyme généré:', anonymousId);
-      } else {
-        logger.debug('Identifiant anonyme existant:', anonymousId);
-      }
-    }
-
-    // ====================================
-    // SAUVEGARDER LA CONVERSATION (utilisateurs enregistrés ET anonymes)
-    // ====================================
-    let conversationSessionId = sessionId;
-
     try {
-      // Créer une nouvelle session si nécessaire
-      if (!conversationSessionId) {
-        if (currentUser) {
-          // Session pour utilisateur enregistré
-          conversationSessionId = await createConversationSession(currentUser.id, message);
-          logger.debug('Nouvelle session utilisateur créée:', conversationSessionId);
-        } else {
-          // Session pour utilisateur anonyme
-          conversationSessionId = await createAnonymousConversationSession(
-            anonymousId,
-            clientIp,
-            req.headers['user-agent'] || 'Unknown',
-            message
-          );
-          logger.debug('Nouvelle session anonyme créée:', conversationSessionId);
-        }
+      if (conversationSessionId) {
+        // Sauvegarder la question de l'utilisateur
+        await addConversationMessage(conversationSessionId, 'user', message, {
+          tokensUsed: 0,
+          responseTimeMs: null,
+          wasCached: false
+        });
+
+        // Sauvegarder la réponse de l'assistant
+        await addConversationMessage(conversationSessionId, 'assistant', answer, {
+          tokensUsed,
+          responseTimeMs,
+          wasCached: fromCache
+        });
+
+        logger.info('Conversation sauvegardée:', {
+          userId: currentUser ? currentUser.id : null,
+          anonymousId: currentUser ? null : anonymousId,
+          sessionId: conversationSessionId,
+          cached: fromCache
+        });
       }
-
-      // Sauvegarder la question de l'utilisateur
-      await addConversationMessage(conversationSessionId, 'user', message, {
-        tokensUsed: 0,
-        responseTimeMs: null,
-        wasCached: false
-      });
-
-      // Sauvegarder la réponse de l'assistant
-      await addConversationMessage(conversationSessionId, 'assistant', answer, {
-        tokensUsed,
-        responseTimeMs,
-        wasCached: fromCache
-      });
-
-      logger.info('Conversation sauvegardée:', {
-        userId: currentUser ? currentUser.id : null,
-        anonymousId: currentUser ? null : anonymousId,
-        sessionId: conversationSessionId,
-        cached: fromCache
-      });
-
     } catch (error) {
       // Ne pas bloquer la réponse si la sauvegarde échoue
       logger.error('Erreur sauvegarde conversation:', error);
