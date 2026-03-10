@@ -755,25 +755,16 @@
             throw new Error('Aucune réponse reçue de l\'assistant');
           }
 
-          // Debug temporaire
-          console.log('=== DEBUG CHAT RESPONSE ===');
-          console.log('paymentUrl:', data.paymentUrl);
-          console.log('offreChoisie:', data.offreChoisie);
-          console.log('response (100 chars):', data.response?.substring(0, 100));
-
           // Si l'agent mentionne les offres dans le texte mais sans bloc INTERNAL, forcer l'affichage des boutons
           let paymentUrl = data.paymentUrl;
           let offreChoisie = data.offreChoisie;
           if (!paymentUrl) {
             const texte = data.response.toLowerCase();
-            console.log('Détection mots-clés:', { '39': texte.includes('39'), '99': texte.includes('99'), 'express': texte.includes('express'), 'premium': texte.includes('premium'), 'formule': texte.includes('formule') });
             if (texte.includes('39') || texte.includes('99') || texte.includes('express') || texte.includes('premium') || texte.includes('formule')) {
               paymentUrl = 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00';
               offreChoisie = texte.includes('premium') ? 'premium_99' : 'express_39';
-              console.log('Boutons forcés - offreChoisie:', offreChoisie);
             }
           }
-          console.log('paymentUrl final:', paymentUrl, '| offreChoisie final:', offreChoisie);
           addTypingMessage(data.response, paymentUrl, offreChoisie);
 
           if (data.sessionId) {
