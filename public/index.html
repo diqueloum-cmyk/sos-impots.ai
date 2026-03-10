@@ -8,72 +8,14 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- jsPDF for PDF generation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: 'Poppins', sans-serif; }
     .typing-cursor { animation: blink 1s infinite; }
     @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
 
-    /* Prevent flash of unauthenticated content */
-    body.checking-auth #heroSection,
-    body.checking-auth #about,
-    body.checking-auth #features,
-    body.checking-auth #testimonials,
-    body.checking-auth #faq,
-    body.checking-auth #contact,
-    body.checking-auth #mainNav {
-      visibility: hidden;
-    }
-
-    /* Conversation History Styles */
-    .conversation-sidebar {
-      transition: transform 0.3s ease-in-out;
-    }
-    .conversation-item {
-      transition: background-color 0.2s;
-    }
-    .conversation-item:hover {
-      background-color: #f3f4f6;
-    }
-    .conversation-item.active {
-      background-color: #dbeafe;
-      border-left: 3px solid #2563eb;
-    }
-    .session-actions {
-      opacity: 1;
-      transition: all 0.2s;
-    }
-    @media (max-width: 768px) {
-      .conversation-sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100vh;
-        z-index: 50;
-        transform: translateX(-100%);
-      }
-      .conversation-sidebar.open {
-        transform: translateX(0);
-      }
-      .sidebar-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 40;
-      }
-      .sidebar-overlay.open {
-        display: block;
-      }
-    }
-
   </style>
 </head>
-<body class="bg-white text-gray-800 checking-auth">
+<body class="bg-white text-gray-800">
 
   <!-- Cookie Banner and Modal will be created dynamically by cookies.js -->
 
@@ -91,13 +33,6 @@
         <a href="#faq">FAQ</a>
         <a href="#contact">Contact</a>
       </nav>
-      <div class="flex items-center space-x-2 md:space-x-4">
-        <div id="userStatus" class="hidden text-xs md:text-sm">
-          <span id="userName" class="hidden sm:inline"></span>
-          <button onclick="logout()" class="ml-1 md:ml-2 text-xs bg-red-600 px-2 py-1 rounded whitespace-nowrap">Déconnexion</button>
-        </div>
-        <button id="loginBtn" onclick="showAuthModal('login')" class="bg-green-600 px-2 md:px-3 py-1 rounded text-xs md:text-sm whitespace-nowrap">Connexion</button>
-      </div>
     </div>
   </header>
 
@@ -137,74 +72,26 @@
     <div class="max-w-6xl mx-auto">
       <h2 class="text-3xl font-bold text-center text-blue-900 mb-8">Posez votre question ici</h2>
 
-      <!-- Overlay for mobile sidebar -->
-      <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-      <div class="flex gap-2 md:gap-4 relative">
-        <!-- Conversation History Sidebar (hidden by default, shown only for logged users) -->
-        <div id="conversationSidebar" class="conversation-sidebar hidden bg-white border-r border-gray-200 w-64 md:w-72 p-4 overflow-y-auto" style="max-height: 600px;">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-lg text-gray-800">Conversations</h3>
-            <button onclick="startNewConversation()" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-              + Nouvelle
+      <div class="bg-gray-50 rounded-lg p-3 md:p-6 shadow-lg">
+          <div id="chatContainer" class="space-y-4 mb-4" style="max-height: 400px; overflow-y: auto;">
+            <div class="text-center text-gray-500">
+              <p>Notre IA spécialisée va vous répondre.</p>
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <input type="text" id="userInput" placeholder="Ex: Quelles sont mes déductions fiscales possibles ?" class="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0">
+            <button onclick="askGPT()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors min-w-[48px] flex-shrink-0">
+              <span id="sendBtn">
+                <span class="hidden max-[500px]:inline">↑</span>
+                <span class="max-[500px]:hidden">Envoyer</span>
+              </span>
+              <span id="loadingBtn" class="hidden">
+                <span class="hidden max-[500px]:inline">...</span>
+                <span class="max-[500px]:hidden">Envoi...</span>
+              </span>
             </button>
           </div>
-
-          <!-- Stats (optional) -->
-          <div id="conversationStats" class="mb-4 p-3 bg-blue-50 rounded-lg text-sm hidden">
-            <div class="flex justify-between">
-              <span class="text-gray-600">Total:</span>
-              <span id="totalSessions" class="font-semibold">0</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Messages:</span>
-              <span id="totalMessages" class="font-semibold">0</span>
-            </div>
-          </div>
-
-          <!-- Session List -->
-          <div id="sessionList" class="space-y-2">
-            <div class="text-center text-gray-400 text-sm py-8">
-              Aucune conversation
-            </div>
-          </div>
         </div>
-
-        <!-- Main Chat Area -->
-        <div class="flex-1 min-w-0">
-          <div class="bg-gray-50 rounded-lg p-3 md:p-6 shadow-lg">
-            <!-- Mobile: Button to toggle sidebar -->
-            <button id="toggleSidebarBtn" onclick="toggleSidebar()" class="md:hidden mb-4 text-blue-600 hover:text-blue-700 font-medium text-sm hidden">
-              ☰ Historique
-            </button>
-
-            <!-- Current Session Title (for logged users) -->
-            <div id="currentSessionHeader" class="mb-4 pb-3 border-b border-gray-200 hidden">
-              <h4 id="currentSessionTitle" class="font-semibold text-gray-800 text-lg">Nouvelle conversation</h4>
-            </div>
-
-            <div id="chatContainer" class="space-y-4 mb-4" style="max-height: 400px; overflow-y: auto;">
-              <div class="text-center text-gray-500">
-                <p>Notre IA spécialisée va vous répondre.</p>
-                <p class="text-sm mt-2" id="questionCounter">2 questions offertes. Ensuite, nous vous demanderons de vous inscrire pour continuer à poser vos questions toujours gratuitement.</p>
-              </div>
-            </div>
-            <div class="flex space-x-2">
-              <input type="text" id="userInput" placeholder="Ex: Quelles sont mes déductions fiscales possibles ?" class="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0">
-              <button onclick="askGPT()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors min-w-[48px] flex-shrink-0">
-                <span id="sendBtn">
-                  <span class="hidden max-[500px]:inline">↑</span>
-                  <span class="max-[500px]:hidden">Envoyer</span>
-                </span>
-                <span id="loadingBtn" class="hidden">
-                  <span class="hidden max-[500px]:inline">...</span>
-                  <span class="max-[500px]:hidden">Envoi...</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -267,7 +154,7 @@
           <h3 class="text-xl font-bold text-blue-900 mb-4 text-center">Discutez avec notre agent IA expert fiscaliste</h3>
           <p class="text-gray-700 text-center">
             Posez gratuitement vos questions fiscales : revenus, charges, immobilier, IFI, investissements, contrôles, litiges, etc.<br>
-            <em>(Après 2 questions, inscription gratuite pour continuer.)</em>
+            <em>(Après 1 question gratuite, inscription gratuite pour continuer.)</em>
           </p>
         </div>
 
@@ -374,104 +261,6 @@
   </section>
   </main>
 
-  <!-- Modal d'authentification -->
-  <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
-    <div class="flex justify-center min-h-screen p-4 py-8">
-      <div class="bg-white rounded-lg max-w-md w-full my-auto flex flex-col" style="max-height: calc(100vh - 4rem);">
-        <div class="p-8 pb-0">
-          <div class="flex justify-between items-center mb-6">
-            <h2 id="authTitle" class="text-2xl font-bold text-blue-900">Connexion</h2>
-            <button onclick="closeAuthModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-          </div>
-
-          <!-- Onglets -->
-          <div class="flex mb-6 border-b">
-            <button onclick="showAuthModal('login')" id="loginTab" class="flex-1 py-2 px-4 text-center border-b-2 border-blue-600 text-blue-600 font-medium">Connexion</button>
-            <button onclick="showAuthModal('register')" id="registerTab" class="flex-1 py-2 px-4 text-center border-b-2 border-transparent text-gray-500 hover:text-gray-700">Inscription</button>
-          </div>
-
-          <!-- Message d'erreur/succès -->
-          <div id="authMessage" class="hidden mb-4 p-3 rounded"></div>
-        </div>
-
-        <div class="px-8 pb-8 overflow-y-auto">
-        <!-- Formulaire de connexion -->
-        <form id="loginForm" onsubmit="submitLogin(event)" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" name="email" required class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-            <input type="password" name="password" required class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <button type="submit" id="loginSubmitBtn" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
-            Se connecter
-          </button>
-        </form>
-
-        <!-- Formulaire d'inscription -->
-        <form id="registerForm" onsubmit="submitRegister(event)" class="hidden space-y-4">
-          <!-- Message après 2 questions gratuites -->
-          <div id="freeQuestionsMessage" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 hidden">
-            <p class="text-sm text-green-800">
-              <strong>✓ Vous avez posé vos 2 questions gratuites</strong>, inscrivez-vous pour continuer à poser vos questions, toujours gratuitement.
-            </p>
-          </div>
-
-          <!-- Avantages de l'inscription -->
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <h3 class="font-semibold text-blue-900 mb-2 flex items-center">
-              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-              </svg>
-              Avantages de l'inscription
-            </h3>
-            <ul class="text-sm text-blue-800 space-y-1">
-              <li class="flex items-start">
-                <span class="text-blue-600 mr-2">✓</span>
-                <span><strong>Questions illimitées</strong> - Posez autant de questions que vous le souhaitez</span>
-              </li>
-              <li class="flex items-start">
-                <span class="text-blue-600 mr-2">✓</span>
-                <span><strong>Historique sauvegardé</strong> - Retrouvez toutes vos conversations</span>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-            <input type="text" name="firstName" required class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-            <input type="text" name="lastName" required class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" name="email" required class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-            <input type="password" name="password" required minlength="6" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <p class="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
-            <input type="password" name="confirmPassword" required minlength="6" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <button type="submit" id="registerSubmitBtn" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
-            S'inscrire
-          </button>
-          <p class="text-xs text-gray-500 text-center">
-            En vous inscrivant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
-          </p>
-        </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Footer -->
   <footer class="bg-gray-800 text-white py-8 px-4">
     <div class="max-w-6xl mx-auto text-center">
@@ -507,418 +296,14 @@
   </footer>
 
   <script>
-    let currentUser = null;
-    let questionsUsed = 0;
-    const maxFreeQuestions = 2;
-    let currentSessionId = null; // ID de la session de conversation actuelle
-    let conversationSessions = []; // Liste des sessions
-
-    // Vérifier le statut utilisateur au chargement
-    document.addEventListener('DOMContentLoaded', function() {
-      checkUserStatus();
-      updateQuestionCounter();
-    });
-
-    // Vérifier le statut de l'utilisateur
-    async function checkUserStatus() {
-      try {
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ action: 'check' })
-        });
-
-        const data = await response.json();
-        
-        if (data.success && data.user) {
-          currentUser = data.user;
-          showUserStatus(data.user);
-        } else {
-          hideUserStatus();
-        }
-      } catch (error) {
-        console.error('Erreur vérification statut:', error);
-        hideUserStatus();
-      }
-    }
-
-    // Afficher le statut utilisateur
-    function showUserStatus(user) {
-      document.getElementById('userStatus').classList.remove('hidden');
-      document.getElementById('loginBtn').classList.add('hidden');
-      document.getElementById('userName').textContent = user.firstName || user.email;
-
-      // Masquer le compteur de questions gratuites
-      updateQuestionCounter();
-
-      // Afficher la sidebar et charger l'historique
-      showConversationSidebar();
-      loadConversationHistory();
-
-      // Masquer le menu de navigation
-      const nav = document.getElementById('mainNav');
-      if (nav) {
-        nav.style.display = 'none';
-      }
-
-      // Masquer toutes les sections sauf le chatbot et les tarifs
-      const sectionsToHide = ['heroSection', 'about', 'features', 'testimonials', 'faq', 'contact'];
-      sectionsToHide.forEach(sectionId => {
-        const section = document.getElementById(sectionId);
-        if (section) {
-          section.style.display = 'none';
-        }
-      });
-
-      // Retirer la classe checking-auth
-      document.body.classList.remove('checking-auth');
-    }
-
-    // Masquer le statut utilisateur
-    function hideUserStatus() {
-      document.getElementById('userStatus').classList.add('hidden');
-      document.getElementById('loginBtn').classList.remove('hidden');
-
-      // Masquer la sidebar
-      hideConversationSidebar();
-
-      // Réafficher le menu de navigation
-      const nav = document.getElementById('mainNav');
-      if (nav) {
-        nav.style.display = '';
-      }
-
-      // Réafficher toutes les sections
-      const sectionsToShow = ['heroSection', 'about', 'features', 'testimonials', 'faq', 'contact'];
-      sectionsToShow.forEach(sectionId => {
-        const section = document.getElementById(sectionId);
-        if (section) {
-          section.style.display = 'block';
-        }
-      });
-
-      // Retirer la classe checking-auth
-      document.body.classList.remove('checking-auth');
-    }
-
-    // Lire les cookies (helper function)
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    }
-
-    // Mettre à jour le compteur de questions
-    function updateQuestionCounter() {
-      const counterElement = document.getElementById('questionCounter');
-
-      // Si l'utilisateur est connecté, masquer le compteur
-      if (currentUser) {
-        if (counterElement) {
-          counterElement.style.display = 'none';
-        }
-        return;
-      }
-
-      // Sinon, afficher et mettre à jour le compteur
-      if (counterElement) {
-        counterElement.style.display = 'block';
-
-        // Lire le cookie q_used pour synchroniser avec le serveur
-        const qUsedCookie = getCookie('q_used');
-        if (qUsedCookie) {
-          questionsUsed = parseInt(qUsedCookie) || 0;
-        }
-
-        const remaining = maxFreeQuestions - questionsUsed;
-        if (remaining === 2) {
-          counterElement.textContent = '2 questions offertes. Ensuite, nous vous demanderons de vous inscrire pour continuer à poser vos questions toujours gratuitement.';
-        } else if (remaining === 1) {
-          counterElement.textContent = '1 question offerte restante. Ensuite, nous vous demanderons de vous inscrire pour continuer à poser vos questions toujours gratuitement.';
-        } else {
-          counterElement.textContent = 'Veuillez vous inscrire pour continuer à poser vos questions toujours gratuitement.';
-        }
-      }
-    }
-
-    // Afficher le modal d'authentification
-    function showAuthModal(type) {
-      const modal = document.getElementById('authModal');
-      const title = document.getElementById('authTitle');
-      const loginForm = document.getElementById('loginForm');
-      const registerForm = document.getElementById('registerForm');
-      const loginTab = document.getElementById('loginTab');
-      const registerTab = document.getElementById('registerTab');
-      const freeQuestionsMessage = document.getElementById('freeQuestionsMessage');
-
-      modal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-      document.getElementById('authMessage').classList.add('hidden');
-
-      if (type === 'login') {
-        title.textContent = 'Connexion';
-        loginForm.classList.remove('hidden');
-        registerForm.classList.add('hidden');
-        loginTab.classList.add('border-blue-600', 'text-blue-600');
-        loginTab.classList.remove('border-transparent', 'text-gray-500');
-        registerTab.classList.remove('border-blue-600', 'text-blue-600');
-        registerTab.classList.add('border-transparent', 'text-gray-500');
-        freeQuestionsMessage.classList.add('hidden');
-      } else {
-        title.textContent = 'Inscription';
-        loginForm.classList.add('hidden');
-        registerForm.classList.remove('hidden');
-        registerTab.classList.add('border-blue-600', 'text-blue-600');
-        registerTab.classList.remove('border-transparent', 'text-gray-500');
-        loginTab.classList.remove('border-blue-600', 'text-blue-600');
-        loginTab.classList.add('border-transparent', 'text-gray-500');
-
-        // Afficher le message si l'utilisateur a utilisé ses 2 questions gratuites
-        if (questionsUsed >= maxFreeQuestions) {
-          freeQuestionsMessage.classList.remove('hidden');
-        } else {
-          freeQuestionsMessage.classList.add('hidden');
-        }
-      }
-    }
-
-    // Fermer le modal d'authentification
-    function closeAuthModal() {
-      document.getElementById('authModal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
-      document.getElementById('authMessage').classList.add('hidden');
-    }
-
-    // Soumettre la connexion
-    async function submitLogin(event) {
-      event.preventDefault();
-      
-      const form = event.target;
-      const submitBtn = document.getElementById('loginSubmitBtn');
-      
-      const formData = {
-        action: 'login',
-        email: form.email.value.trim(),
-        password: form.password.value
-      };
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Connexion...';
-
-      try {
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage('Connexion réussie !', 'success');
-          currentUser = data.user;
-
-          // Sauvegarder les messages anonymes s'il y en a
-          await saveAnonymousMessages();
-
-          showUserStatus(data.user);
-          setTimeout(() => {
-            closeAuthModal();
-            form.reset();
-          }, 1500);
-        } else {
-          throw new Error(data.error || data.message);
-        }
-
-      } catch (error) {
-        showMessage(error.message, 'error');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Se connecter';
-      }
-    }
-
-    // Soumettre l'inscription
-    async function submitRegister(event) {
-      event.preventDefault();
-
-      const form = event.target;
-      const submitBtn = document.getElementById('registerSubmitBtn');
-
-      // Vérifier que les mots de passe correspondent
-      const password = form.password.value;
-      const confirmPassword = form.confirmPassword.value;
-
-      if (password !== confirmPassword) {
-        showMessage('Les mots de passe ne correspondent pas', 'error');
-        return;
-      }
-
-      const formData = {
-        action: 'register',
-        firstName: form.firstName.value.trim(),
-        lastName: form.lastName.value.trim(),
-        email: form.email.value.trim(),
-        password: password
-      };
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Inscription en cours...';
-
-      try {
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage('Inscription réussie ! Vous pouvez maintenant poser des questions illimitées.', 'success');
-          currentUser = data.user;
-
-          // Sauvegarder les messages anonymes s'il y en a
-          await saveAnonymousMessages();
-
-          showUserStatus(data.user);
-
-          setTimeout(() => {
-            closeAuthModal();
-            form.reset();
-          }, 2000);
-        } else {
-          throw new Error(data.error || 'Erreur lors de l\'inscription');
-        }
-
-      } catch (error) {
-        showMessage(error.message, 'error');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'S\'inscrire';
-      }
-    }
-
-    // Déconnexion
-    async function logout() {
-      try {
-        await fetch('/api/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ action: 'logout' })
-        });
-
-        currentUser = null;
-        currentSessionId = null;
-        conversationSessions = [];
-
-        // Vider la chatbox
-        const chatContainer = document.getElementById('chatContainer');
-        chatContainer.innerHTML = `
-          <div class="text-center text-gray-500">
-            <p>Notre IA spécialisée va vous répondre.</p>
-            <p class="text-sm mt-2" id="questionCounter">2 questions offertes. Ensuite, nous vous demanderons de vous inscrire pour continuer à poser vos questions toujours gratuitement.</p>
-          </div>
-        `;
-
-        // Réinitialiser le compteur de questions
-        questionsUsed = 0;
-        updateQuestionCounter();
-
-        hideUserStatus();
-        showMessage('Déconnexion réussie', 'success');
-      } catch (error) {
-        console.error('Erreur de déconnexion:', error);
-      }
-    }
-
-    // Afficher un message
-    function showMessage(message, type) {
-      const messageDiv = document.getElementById('authMessage');
-      messageDiv.textContent = message;
-      messageDiv.className = `p-3 rounded ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
-      messageDiv.classList.remove('hidden');
-    }
-
-    // Sauvegarder les messages anonymes après connexion/inscription
-    async function saveAnonymousMessages() {
-      const chatContainer = document.getElementById('chatContainer');
-      const messageElements = chatContainer.querySelectorAll('.flex');
-
-      if (messageElements.length === 0) {
-        return; // Pas de messages à sauvegarder
-      }
-
-      // Collecter les messages de la chatbox
-      const messages = [];
-      messageElements.forEach(msgDiv => {
-        const isUser = msgDiv.classList.contains('justify-end');
-        const messageContent = msgDiv.querySelector('div');
-
-        if (messageContent) {
-          // Extraire le texte en ignorant les badges "Cache" et autres éléments
-          let text = '';
-          messageContent.childNodes.forEach(node => {
-            if (node.nodeType === Node.TEXT_NODE) {
-              text += node.textContent;
-            } else if (node.nodeName === 'SPAN' && !node.classList.contains('typing-cursor') && !node.textContent.includes('Cache')) {
-              text += node.textContent;
-            }
-          });
-
-          text = text.trim();
-          if (text && !text.includes('Réflexion en cours') && !text.includes('Posez votre question')) {
-            messages.push({
-              role: isUser ? 'user' : 'assistant',
-              content: text
-            });
-          }
-        }
-      });
-
-      if (messages.length === 0) {
-        return; // Pas de vrais messages à sauvegarder
-      }
-
-      try {
-        // Envoyer les messages au serveur pour les sauvegarder
-        const response = await fetch('/api/conversations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            action: 'saveAnonymous',
-            messages: messages
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.sessionId) {
-          currentSessionId = data.sessionId;
-          // Recharger l'historique pour afficher la nouvelle session
-          await loadConversationHistory();
-        }
-      } catch (error) {
-        console.error('Erreur sauvegarde messages anonymes:', error);
-      }
-    }
+    let currentSessionId = null;
 
     // Variable pour empêcher les doubles soumissions
     let isProcessing = false;
 
     // Fonction principale pour poser une question
     async function askGPT() {
-      // Empêcher les doubles soumissions
-      if (isProcessing) {
-        console.log('Already processing a request, ignoring...');
-        return;
-      }
+      if (isProcessing) return;
 
       const userInput = document.getElementById('userInput');
       const question = userInput.value.trim();
@@ -928,24 +313,13 @@
         return;
       }
 
-      // Vérifier si l'utilisateur peut poser une question
-      if (!currentUser && questionsUsed >= maxFreeQuestions) {
-        showAuthModal('register');
-        return;
-      }
-
-      // Marquer comme en cours de traitement
       isProcessing = true;
 
-      // Afficher la question de l'utilisateur
       addMessage(question, 'user');
       userInput.value = '';
 
-      // Afficher l'indicateur de chargement
       const loadingId = addMessage('Réflexion en cours...', 'assistant', true);
-      console.log('Created loading message with ID:', loadingId);
 
-      // Désactiver le bouton
       const sendBtn = document.getElementById('sendBtn');
       const loadingBtn = document.getElementById('loadingBtn');
       sendBtn.classList.add('hidden');
@@ -958,78 +332,36 @@
           credentials: 'include',
           body: JSON.stringify({
             message: question,
-            sessionId: currentSessionId // Envoyer l'ID de session actuel
+            sessionId: currentSessionId
           })
         });
 
-        // Vérifier si la réponse est OK avant de parser le JSON
         if (!response.ok) {
           let errorMessage = 'Erreur serveur';
           try {
             const errorData = await response.json();
             errorMessage = errorData.error || errorMessage;
           } catch (e) {
-            // Si le JSON parsing échoue, utiliser le message par défaut
             errorMessage = `Erreur ${response.status}: ${response.statusText}`;
           }
-          // Supprimer le message de chargement avant de lancer l'erreur
           removeMessage(loadingId);
           throw new Error(errorMessage);
         }
 
         const data = await response.json();
-        console.log('Chat API response:', data); // Debug log
 
-        // Supprimer le message de chargement
         removeMessage(loadingId);
 
         if (data.success) {
-          // Vérifier que la réponse existe
           if (!data.response) {
-            console.error('No response in data:', data);
             throw new Error('Aucune réponse reçue de l\'assistant');
           }
 
-          // Ajouter la réponse avec effet de frappe
-          addTypingMessage(data.response);
+          addTypingMessage(data.response, data.paymentUrl, data.offreChoisie);
 
-          // Mettre à jour le sessionId si nouvelle session créée
           if (data.sessionId) {
             currentSessionId = data.sessionId;
-
-            // Si utilisateur connecté, mettre à jour le titre et recharger l'historique
-            if (currentUser) {
-              // Mettre le titre de la session (première question)
-              if (!document.getElementById('currentSessionTitle').textContent.includes(question.substring(0, 30))) {
-                document.getElementById('currentSessionTitle').textContent = question.substring(0, 50) + (question.length > 50 ? '...' : '');
-              }
-
-              // Recharger l'historique pour afficher la nouvelle session
-              setTimeout(() => {
-                loadConversationHistory();
-              }, 500);
-            }
           }
-
-          // Incrémenter le compteur si utilisateur non connecté
-          if (!currentUser) {
-            questionsUsed++;
-            updateQuestionCounter();
-          }
-        } else if (data.needSignup) {
-          // L'utilisateur a atteint la limite de 2 questions
-          addMessage(data.message, 'assistant');
-
-          // Mettre à jour le compteur pour refléter les 2 questions utilisées
-          if (!currentUser) {
-            questionsUsed = data.qUsed || 2;
-            updateQuestionCounter();
-          }
-
-          // Afficher le modal d'inscription après un court délai
-          setTimeout(() => {
-            showAuthModal('register');
-          }, 500);
         } else {
           throw new Error(data.error || 'Erreur lors de la génération de la réponse');
         }
@@ -1038,10 +370,8 @@
         removeMessage(loadingId);
         addMessage('Erreur: ' + error.message + '. Veuillez réessayer.', 'assistant');
       } finally {
-        // Réactiver le bouton
         sendBtn.classList.remove('hidden');
         loadingBtn.classList.add('hidden');
-        // Réinitialiser le flag de traitement
         isProcessing = false;
       }
     }
@@ -1096,7 +426,7 @@
     }
 
     // Ajouter un message avec effet de frappe
-    function addTypingMessage(text) {
+    function addTypingMessage(text, paymentUrl, offreChoisie) {
       const chatContainer = document.getElementById('chatContainer');
       const messageDiv = document.createElement('div');
 
@@ -1127,8 +457,31 @@
           textSpan.textContent = text;
           cursorSpan.remove();
           clearInterval(typingInterval);
+
+          // Afficher le bouton de paiement après l'effet de frappe
+          if (paymentUrl) {
+            const offreLabels = {
+              express_39: 'Analyse Express IA — 39 €',
+              premium_99: 'Analyse Premium IA + Fiscaliste — 99 €'
+            };
+            const label = offreLabels[offreChoisie] || 'Payer maintenant';
+
+            const btnWrapper = document.createElement('div');
+            btnWrapper.className = 'flex justify-start mt-2';
+
+            const btn = document.createElement('a');
+            btn.href = paymentUrl;
+            btn.target = '_blank';
+            btn.rel = 'noopener noreferrer';
+            btn.className = 'inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg shadow transition-colors text-sm';
+            btn.textContent = '💳 ' + label;
+
+            btnWrapper.appendChild(btn);
+            chatContainer.appendChild(btnWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+          }
         }
-        
+
         // Scroll vers le bas
         chatContainer.scrollTop = chatContainer.scrollHeight;
       }, 30);
@@ -1141,378 +494,6 @@
       }
     });
 
-    // ====================================
-    // GESTION DE L'HISTORIQUE DES CONVERSATIONS
-    // ====================================
-
-    // Afficher la sidebar des conversations
-    function showConversationSidebar() {
-      document.getElementById('conversationSidebar').classList.remove('hidden');
-      document.getElementById('toggleSidebarBtn').classList.remove('hidden');
-      document.getElementById('currentSessionHeader').classList.remove('hidden');
-    }
-
-    // Masquer la sidebar des conversations
-    function hideConversationSidebar() {
-      document.getElementById('conversationSidebar').classList.add('hidden');
-      document.getElementById('toggleSidebarBtn').classList.add('hidden');
-      document.getElementById('currentSessionHeader').classList.add('hidden');
-    }
-
-    // Toggle sidebar sur mobile
-    function toggleSidebar() {
-      const sidebar = document.getElementById('conversationSidebar');
-      const overlay = document.getElementById('sidebarOverlay');
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('open');
-    }
-
-    // Charger l'historique des conversations
-    async function loadConversationHistory() {
-      try {
-        const response = await fetch('/api/conversations', {
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          conversationSessions = data.sessions || [];
-          renderSessionList();
-
-          // Charger les stats (optionnel)
-          loadConversationStats();
-        }
-      } catch (error) {
-        console.error('Erreur chargement historique:', error);
-      }
-    }
-
-    // Charger les statistiques
-    async function loadConversationStats() {
-      try {
-        const response = await fetch('/api/conversations?action=stats', {
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.stats) {
-          document.getElementById('conversationStats').classList.remove('hidden');
-          document.getElementById('totalSessions').textContent = data.stats.totalSessions;
-          document.getElementById('totalMessages').textContent = data.stats.totalMessages;
-        }
-      } catch (error) {
-        console.error('Erreur chargement stats:', error);
-      }
-    }
-
-    // Afficher la liste des sessions
-    function renderSessionList() {
-      const sessionList = document.getElementById('sessionList');
-
-      if (conversationSessions.length === 0) {
-        sessionList.innerHTML = '<div class="text-center text-gray-400 text-sm py-8">Aucune conversation</div>';
-        return;
-      }
-
-      sessionList.innerHTML = conversationSessions.map(session => `
-        <div class="conversation-item p-3 rounded-lg cursor-pointer ${session.id === currentSessionId ? 'active' : ''}"
-             onclick="loadSession(${session.id})">
-          <div class="flex items-start justify-between">
-            <div class="flex-1 min-w-0">
-              <h4 class="font-medium text-sm text-gray-800 truncate">${escapeHtml(session.title)}</h4>
-              <p class="text-xs text-gray-500 mt-1">${session.messageCount} messages</p>
-              <p class="text-xs text-gray-400">${formatDate(session.lastMessageAt)}</p>
-            </div>
-            <div class="session-actions ml-2 flex space-x-1">
-              <button onclick="event.stopPropagation(); downloadSessionPDF(${session.id})"
-                      class="bg-blue-500 hover:bg-blue-600 text-white rounded px-2 py-1 text-xs shadow-sm transition-colors"
-                      title="Télécharger en PDF">
-                📥 PDF
-              </button>
-              <button onclick="event.stopPropagation(); deleteSession(${session.id})"
-                      class="bg-red-500 hover:bg-red-600 text-white rounded px-2 py-1 text-xs shadow-sm transition-colors"
-                      title="Supprimer">
-                🗑️
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // Charger une session spécifique
-    async function loadSession(sessionId) {
-      try {
-        // Fermer sidebar sur mobile
-        document.getElementById('conversationSidebar').classList.remove('open');
-        document.getElementById('sidebarOverlay').classList.remove('open');
-
-        const response = await fetch(`/api/conversations?sessionId=${sessionId}`, {
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          currentSessionId = sessionId;
-
-          // Mettre à jour le titre
-          const session = conversationSessions.find(s => s.id === sessionId);
-          if (session) {
-            document.getElementById('currentSessionTitle').textContent = session.title;
-          }
-
-          // Afficher les messages
-          const chatContainer = document.getElementById('chatContainer');
-          chatContainer.innerHTML = '';
-
-          data.messages.forEach(msg => {
-            addMessageToUI(msg.content, msg.role, false, msg.wasCached);
-          });
-
-          // Mettre à jour l'affichage de la session active
-          renderSessionList();
-        }
-      } catch (error) {
-        console.error('Erreur chargement session:', error);
-      }
-    }
-
-    // Démarrer une nouvelle conversation
-    function startNewConversation() {
-      currentSessionId = null;
-      document.getElementById('currentSessionTitle').textContent = 'Nouvelle conversation';
-      document.getElementById('chatContainer').innerHTML = `
-        <div class="text-center text-gray-500">
-          <p>Posez votre question juridique ci-dessous...</p>
-        </div>
-      `;
-      renderSessionList();
-
-      // Fermer sidebar sur mobile
-      document.getElementById('conversationSidebar').classList.remove('open');
-      document.getElementById('sidebarOverlay').classList.remove('open');
-    }
-
-    // Supprimer une session
-    async function deleteSession(sessionId) {
-      if (!confirm('Êtes-vous sûr de vouloir supprimer cette conversation ?')) {
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/conversations?sessionId=${sessionId}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          // Si c'était la session active, démarrer une nouvelle
-          if (sessionId === currentSessionId) {
-            startNewConversation();
-          }
-
-          // Recharger l'historique
-          await loadConversationHistory();
-        } else {
-          alert('Erreur lors de la suppression');
-        }
-      } catch (error) {
-        console.error('Erreur suppression session:', error);
-        alert('Erreur lors de la suppression');
-      }
-    }
-
-    // Télécharger une session en PDF
-    async function downloadSessionPDF(sessionId) {
-      try {
-        // Récupérer les messages de la session
-        const response = await fetch(`/api/conversations?sessionId=${sessionId}`, {
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (!data.success || !data.messages || data.messages.length === 0) {
-          alert('Aucun message à télécharger');
-          return;
-        }
-
-        // Trouver le titre de la session
-        const session = conversationSessions.find(s => s.id === sessionId);
-        const sessionTitle = session ? session.title : 'Conversation';
-        const sessionDate = session ? new Date(session.createdAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
-
-        // Créer le PDF avec jsPDF
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        // Configuration
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 20;
-        const maxWidth = pageWidth - (margin * 2);
-        let yPosition = margin;
-
-        // En-tête du document
-        doc.setFontSize(18);
-        doc.setFont(undefined, 'bold');
-        doc.text('sos-impots.ai', margin, yPosition);
-        yPosition += 10;
-
-        doc.setFontSize(14);
-        doc.text(sessionTitle, margin, yPosition);
-        yPosition += 8;
-
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text('Date : ' + sessionDate, margin, yPosition);
-        yPosition += 5;
-        doc.text(`${data.messages.length} messages`, margin, yPosition);
-        yPosition += 15;
-
-        // Ligne de séparation
-        doc.setDrawColor(200, 200, 200);
-        doc.line(margin, yPosition, pageWidth - margin, yPosition);
-        yPosition += 10;
-
-        // Parcourir les messages
-        doc.setTextColor(0, 0, 0);
-
-        for (let i = 0; i < data.messages.length; i++) {
-          const msg = data.messages[i];
-          const isUser = msg.role === 'user';
-
-          // Vérifier si on doit ajouter une nouvelle page
-          if (yPosition > pageHeight - 40) {
-            doc.addPage();
-            yPosition = margin;
-          }
-
-          // Label (Vous ou Assistant)
-          doc.setFontSize(11);
-          doc.setFont(undefined, 'bold');
-          if (isUser) {
-            doc.setTextColor(37, 99, 235); // Bleu
-            doc.text('Vous :', margin, yPosition);
-          } else {
-            doc.setTextColor(107, 114, 128); // Gris
-            doc.text('Assistant IA :', margin, yPosition);
-          }
-          yPosition += 6;
-
-          // Message
-          doc.setFont(undefined, 'normal');
-          doc.setTextColor(0, 0, 0);
-          doc.setFontSize(10);
-
-          const lines = doc.splitTextToSize(msg.content, maxWidth);
-
-          // Vérifier si le message tient sur la page
-          if (yPosition + (lines.length * 5) > pageHeight - 20) {
-            doc.addPage();
-            yPosition = margin;
-          }
-
-          doc.text(lines, margin, yPosition);
-          yPosition += lines.length * 5 + 8;
-
-          // Ligne de séparation entre messages
-          if (i < data.messages.length - 1) {
-            doc.setDrawColor(240, 240, 240);
-            doc.line(margin, yPosition, pageWidth - margin, yPosition);
-            yPosition += 8;
-          }
-        }
-
-        // Footer sur toutes les pages
-        const totalPages = doc.internal.pages.length - 1;
-        for (let i = 1; i <= totalPages; i++) {
-          doc.setPage(i);
-          doc.setFontSize(8);
-          doc.setTextColor(150, 150, 150);
-          doc.text(
-            `Page ${i} sur ${totalPages} - sos-impots.ai`,
-            pageWidth / 2,
-            pageHeight - 10,
-            { align: 'center' }
-          );
-        }
-
-        // Générer le nom du fichier
-        const fileName = `sos-impots_${sessionTitle.replace(/[^a-z0-9]/gi, '_')}_${sessionDate.replace(/\//g, '-')}.pdf`;
-
-        // Télécharger le PDF
-        doc.save(fileName);
-
-      } catch (error) {
-        console.error('Erreur téléchargement PDF:', error);
-        alert('Erreur lors de la génération du PDF');
-      }
-    }
-
-    // Ajouter un message à l'interface (helper amélioré)
-    function addMessageToUI(message, sender, isLoading = false, isCached = false) {
-      const chatContainer = document.getElementById('chatContainer');
-      const messageDiv = document.createElement('div');
-      const messageId = 'msg_' + Date.now();
-
-      messageDiv.id = messageId;
-      messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-
-      const messageContent = document.createElement('div');
-      messageContent.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-line ${
-        sender === 'user'
-          ? 'bg-blue-600 text-white'
-          : 'bg-gray-200 text-gray-800'
-      }`;
-
-      if (isLoading) {
-        const textSpan = document.createElement('span');
-        textSpan.textContent = message;
-        const cursorSpan = document.createElement('span');
-        cursorSpan.className = 'typing-cursor';
-        messageContent.appendChild(textSpan);
-        messageContent.appendChild(cursorSpan);
-      } else {
-        messageContent.textContent = message;
-      }
-
-      messageDiv.appendChild(messageContent);
-      chatContainer.appendChild(messageDiv);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-
-      return messageId;
-    }
-
-    // Utilitaires
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    function formatDate(dateString) {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return 'À l\'instant';
-      if (diffMins < 60) return `Il y a ${diffMins}min`;
-      if (diffHours < 24) return `Il y a ${diffHours}h`;
-      if (diffDays === 1) return 'Hier';
-      if (diffDays < 7) return `Il y a ${diffDays}j`;
-
-      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-    }
   </script>
 
   <!-- Cookie Management -->

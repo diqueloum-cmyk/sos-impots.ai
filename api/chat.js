@@ -3,8 +3,6 @@ import { parseCookies, setCorsHeaders, handleCorsPreflight, createCookie } from 
 import {
   getCachedAnswer,
   saveCachedAnswer,
-  findUserByEmail,
-  createConversationSession,
   createAnonymousConversationSession,
   addConversationMessage,
   getSessionThreadId,
@@ -12,13 +10,39 @@ import {
 } from '../lib/db.js';
 import {
   chatRateLimiter,
-  chatRateLimiterRegistered,
   getClientIp,
   checkRateLimit,
   sendRateLimitError,
   addRateLimitHeaders
 } from '../lib/ratelimit.js';
 import logger from '../lib/logger.js';
+
+/**
+ * Sépare la réponse visible du bloc ---INTERNAL---
+ * @param {string} fullResponse - Réponse complète de l'assistant
+ * @returns {{ visibleResponse: string, internalData: object|null }}
+ */
+function parseAgentResponse(fullResponse) {
+  const separator = '---INTERNAL---';
+  const separatorIndex = fullResponse.indexOf(separator);
+
+  if (separatorIndex === -1) {
+    return { visibleResponse: fullResponse.trim(), internalData: null };
+  }
+
+  const visibleResponse = fullResponse.substring(0, separatorIndex).trim();
+  const jsonString = fullResponse.substring(separatorIndex + separator.length).trim();
+
+  let internalData = null;
+  try {
+    internalData = JSON.parse(jsonString);
+  } catch (e) {
+    logger.warn('Impossible de parser le bloc INTERNAL:', e.message);
+    logger.debug('JSON brut:', jsonString);
+  }
+
+  return { visibleResponse, internalData };
+}
 
 export default async function handler(req, res) {
   // Configurer CORS avec liste blanche
@@ -40,53 +64,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Lire les cookies
-    const cookies = parseCookies(req.headers.cookie || '');
-    const qUsed = parseInt(cookies.q_used || '0');
-    const registered = cookies.registered === '1';
-    const userEmail = cookies.user_email;
-
-    logger.debug('Cookies:', { qUsed, registered });
-
-    // Récupérer l'utilisateur si connecté
-    let currentUser = null;
-    if (registered && userEmail) {
-      try {
-        currentUser = await findUserByEmail(userEmail);
-      } catch (error) {
-        logger.error('Erreur récupération utilisateur:', error);
-      }
-    }
-
     // ====================================
     // RATE LIMITING
     // ====================================
     const clientIp = getClientIp(req);
+    const cookies = parseCookies(req.headers.cookie || '');
 
-    // Choisir le rate limiter approprié
-    const limiter = registered ? chatRateLimiterRegistered : chatRateLimiter;
-    const identifier = registered && userEmail ? userEmail : clientIp;
-
-    const rateLimit = await checkRateLimit(limiter, identifier);
+    const rateLimit = await checkRateLimit(chatRateLimiter, clientIp);
 
     if (!rateLimit.success) {
-      logger.security(`Rate limit dépassé pour ${identifier} (registered: ${registered})`);
+      logger.security(`Rate limit dépassé pour ${clientIp}`);
       return sendRateLimitError(res, rateLimit);
     }
 
-    // Ajouter les headers de rate limit à la réponse
     addRateLimitHeaders(res, rateLimit);
-
-    // Vérifier si l'utilisateur a dépassé la limite
-    if (!registered && qUsed >= 2) {
-      return res.status(200).json({
-        success: false,
-        needSignup: true,
-        message: 'Vous avez utilisé vos 2 questions gratuites. Inscrivez-vous pour continuer.',
-        qUsed,
-        remaining: 0
-      });
-    }
 
     // Vérifier que la clé API et l'Assistant ID sont présents
     if (!process.env.OPENAI_API_KEY) {
@@ -96,7 +87,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const ASSISTANT_ID = process.env.ASSISTANT_ID || 'asst_Roo0D8nWTgXAaP7TPUjE63yo';
+    const ASSISTANT_ID = process.env.ASSISTANT_ID || 'asst_dwzcjEy7UaGPLek26oQ7mlZG';
 
     // Mesurer le temps de réponse
     const startTime = Date.now();
@@ -104,47 +95,46 @@ export default async function handler(req, res) {
     // ====================================
     // GESTION IDENTIFIANT ANONYME
     // ====================================
-    let anonymousId = null;
+    let anonymousId = cookies.anonymous_session_id;
     let needsAnonymousCookie = false;
 
-    if (!currentUser) {
-      anonymousId = cookies.anonymous_session_id;
-      if (!anonymousId) {
-        anonymousId = crypto.randomUUID();
-        needsAnonymousCookie = true;
-        logger.debug('Nouvel identifiant anonyme généré:', anonymousId);
-      } else {
-        logger.debug('Identifiant anonyme existant:', anonymousId);
-      }
+    if (!anonymousId) {
+      anonymousId = crypto.randomUUID();
+      needsAnonymousCookie = true;
+      logger.debug('Nouvel identifiant anonyme généré:', anonymousId);
     }
 
     // ====================================
-    // CRÉER OU RÉCUPÉRER LA SESSION (avant l'appel OpenAI pour récupérer le threadId)
+    // CRÉER OU RÉCUPÉRER LA SESSION
     // ====================================
     let conversationSessionId = sessionId;
 
     try {
       if (!conversationSessionId) {
-        if (currentUser) {
-          conversationSessionId = await createConversationSession(currentUser.id, message);
-          logger.debug('Nouvelle session utilisateur créée:', conversationSessionId);
-        } else {
-          conversationSessionId = await createAnonymousConversationSession(
-            anonymousId,
-            clientIp,
-            req.headers['user-agent'] || 'Unknown',
-            message
-          );
-          logger.debug('Nouvelle session anonyme créée:', conversationSessionId);
-        }
+        conversationSessionId = await createAnonymousConversationSession(
+          anonymousId,
+          clientIp,
+          req.headers['user-agent'] || 'Unknown',
+          message
+        );
+        logger.debug('Nouvelle session anonyme créée:', conversationSessionId);
       }
     } catch (error) {
       logger.error('Erreur création session:', error);
     }
 
-    // Vérifier le cache d'abord
-    const cachedResponse = await getCachedAnswer(message);
+    // Vérifier le cache UNIQUEMENT si c'est un nouveau message sans session
+    const isNewConversation = !sessionId;
+    const isSubstantialMessage = message.trim().length > 30;
+
+    let cachedResponse = null;
+    if (isNewConversation && isSubstantialMessage) {
+      cachedResponse = await getCachedAnswer(message);
+    }
+
     let answer;
+    let fullAnswer;
+    let internalData = null;
     let fromCache = false;
     let tokensUsed = 0;
 
@@ -207,29 +197,13 @@ export default async function handler(req, res) {
           logger.debug('Thread OpenAI réutilisé:', threadId);
         }
 
-        // Préfixer le message avec le rappel du format obligatoire
-        const formatReminder = `RAPPEL FORMAT OBLIGATOIRE : Tu DOIS suivre cette structure EXACTE pour ta réponse, SANS afficher les titres des sections :
-
-1. Commence par reformuler le contexte / demande de l'utilisateur
-2. Indique les hypothèses prises si des informations manquent
-3. Fournis une analyse juridique synthétique avec articles de loi cités, source et date de vérification si applicable
-4. Présente les options possibles
-5. Donne une recommandation synthétique
-6. Liste les points de vigilance
-7. Termine par une question ou étape suivante
-
-IMPORTANT : Ne mets PAS de titres de sections (comme "1. Contexte", "2. Hypothèses", etc.). Rédige directement le contenu en suivant l'ordre.
-
-Question de l'utilisateur :
-${message}`;
-
         // Étape 2: Ajouter le message au thread
         const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
           method: 'POST',
           headers: openaiHeaders,
           body: JSON.stringify({
             role: 'user',
-            content: formatReminder
+            content: message
           })
         });
 
@@ -244,8 +218,7 @@ ${message}`;
           headers: openaiHeaders,
           body: JSON.stringify({
             assistant_id: ASSISTANT_ID,
-            temperature: 0,
-            additional_instructions: "IMPORTANT : Respecte STRICTEMENT le format structuré en 7 parties pour CHAQUE réponse fiscale, SANS jamais afficher les titres des sections. Rédige un texte fluide qui suit naturellement l'ordre : contexte, hypothèses, analyse juridique avec articles et sources, options, recommandation, vigilance, question/étape suivante. Ne dévie JAMAIS de cette structure."
+            temperature: 0.3
           })
         });
 
@@ -317,13 +290,39 @@ ${message}`;
           throw new Error('Aucune réponse de l\'assistant');
         }
 
-        answer = assistantMessage.content[0].text.value;
+        fullAnswer = assistantMessage.content[0].text.value;
+        const { visibleResponse, internalData: parsedInternalData } = parseAgentResponse(fullAnswer);
+        answer = visibleResponse;
+        internalData = parsedInternalData;
 
         // Estimer les tokens (approximation basée sur la longueur)
-        tokensUsed = Math.ceil((message.length + answer.length) / 4);
+        tokensUsed = Math.ceil((message.length + fullAnswer.length) / 4);
 
-        // Sauvegarder la réponse dans le cache
-        await saveCachedAnswer(message, answer);
+        // Sauvegarder dans le cache UNIQUEMENT pour les nouvelles conversations
+        if (isNewConversation && isSubstantialMessage) {
+          await saveCachedAnswer(message, visibleResponse);
+        }
+
+        // Logger les données internes si présentes
+        if (internalData) {
+          logger.info('Données internes agent reçues:', {
+            offre: internalData.offre_choisie,
+            email: internalData.email,
+            urgence: internalData.urgence
+          });
+        }
+
+        // Détecter le choix d'offre et préparer l'URL de paiement
+        if (internalData && internalData.offre_choisie) {
+          const STRIPE_LINKS = {
+            express_39: 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00',
+            premium_99: 'https://buy.stripe.com/bJe28qfUOa4i2hAff0ejK01'
+          };
+          const paymentUrl = STRIPE_LINKS[internalData.offre_choisie];
+          if (paymentUrl) {
+            internalData._paymentUrl = paymentUrl;
+          }
+        }
 
       } catch (error) {
         logger.error('OpenAI Assistant API Error:', error);
@@ -348,16 +347,16 @@ ${message}`;
           wasCached: false
         });
 
-        // Sauvegarder la réponse de l'assistant
-        await addConversationMessage(conversationSessionId, 'assistant', answer, {
+        // Sauvegarder la réponse complète de l'assistant (avec bloc INTERNAL si présent)
+        const messageToStore = fullAnswer || answer;
+        await addConversationMessage(conversationSessionId, 'assistant', messageToStore, {
           tokensUsed,
           responseTimeMs,
           wasCached: fromCache
         });
 
         logger.info('Conversation sauvegardée:', {
-          userId: currentUser ? currentUser.id : null,
-          anonymousId: currentUser ? null : anonymousId,
+          anonymousId,
           sessionId: conversationSessionId,
           cached: fromCache
         });
@@ -367,34 +366,21 @@ ${message}`;
       logger.error('Erreur sauvegarde conversation:', error);
     }
 
-    // Incrémenter le compteur de questions si non inscrit
-    const newQUsed = registered ? qUsed : qUsed + 1;
-    const remaining = registered ? 'illimité' : Math.max(0, 2 - newQUsed);
-
-    // Définir les cookies
-    if (!registered) {
-      const cookies = [
-        createCookie('q_used', newQUsed.toString(), { maxAge: 24 * 60 * 60 })
-      ];
-
-      // Ajouter le cookie d'identifiant anonyme si nécessaire
-      if (needsAnonymousCookie) {
-        cookies.push(
-          createCookie('anonymous_session_id', anonymousId, { maxAge: 24 * 60 * 60 })
-        );
-        logger.debug('Cookie anonymous_session_id défini');
-      }
-
-      res.setHeader('Set-Cookie', cookies);
+    // Définir le cookie d'identifiant anonyme si nécessaire
+    if (needsAnonymousCookie) {
+      res.setHeader('Set-Cookie', [
+        createCookie('anonymous_session_id', anonymousId, { maxAge: 24 * 60 * 60 })
+      ]);
+      logger.debug('Cookie anonymous_session_id défini');
     }
 
     return res.status(200).json({
       success: true,
       response: answer,
-      qUsed: newQUsed,
-      remaining,
       cached: fromCache,
-      sessionId: conversationSessionId // Retourner le sessionId pour le frontend
+      sessionId: conversationSessionId,
+      paymentUrl: internalData?._paymentUrl || null,
+      offreChoisie: internalData?.offre_choisie || null
     });
 
   } catch (error) {

@@ -4,13 +4,10 @@
     "api/chat.js": {
       "maxDuration": 60
     },
-    "api/signup.js": {
-      "maxDuration": 10
-    },
     "api/setup-db.js": {
       "maxDuration": 10
     },
-    "api/conversations.js": {
+    "api/stripe-webhook.js": {
       "maxDuration": 10
     }
   },

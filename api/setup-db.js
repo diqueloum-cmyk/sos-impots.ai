@@ -2,7 +2,7 @@
 // À exécuter UNE SEULE FOIS après avoir configuré Vercel Postgres
 // URL: https://votre-site.vercel.app/api/setup-db
 
-import { createUsersTable, createCacheTable, createConversationTables, migrateConversationTablesForAnonymous, migrateAddOpenaiThreadId } from '../lib/db.js';
+import { createCacheTable, createConversationTables, migrateConversationTablesForAnonymous, migrateAddOpenaiThreadId, createOrdersTable } from '../lib/db.js';
 import logger from '../lib/logger.js';
 
 export default async function handler(req, res) {
@@ -53,6 +53,22 @@ export default async function handler(req, res) {
     }
   }
 
+  // Action : migrate-orders
+  if (action === 'migrate-orders') {
+    try {
+      const result = await createOrdersTable();
+      return res.status(200).json({
+        success: true,
+        action: 'migrate-orders',
+        message: 'Table orders créée avec succès',
+        details: result
+      });
+    } catch (error) {
+      logger.error('Erreur migration orders:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
   // Action : migrate-openai-thread
   if (action === 'migrate-openai-thread') {
     try {
@@ -75,10 +91,6 @@ export default async function handler(req, res) {
   try {
     logger.info('Initialisation de la base de données...');
 
-    // Créer la table users
-    const usersResult = await createUsersTable();
-    logger.info('Table users créée');
-
     // Créer la table de cache
     const cacheResult = await createCacheTable();
     logger.info('Table chat_cache créée');
@@ -93,7 +105,6 @@ export default async function handler(req, res) {
       success: true,
       message: 'Base de données initialisée avec succès',
       details: {
-        users: usersResult,
         cache: cacheResult,
         conversations: conversationResult
       },
