@@ -755,7 +755,17 @@
             throw new Error('Aucune réponse reçue de l\'assistant');
           }
 
-          addTypingMessage(data.response, data.paymentUrl, data.offreChoisie);
+          // Si l'agent mentionne les offres dans le texte mais sans bloc INTERNAL, forcer l'affichage des boutons
+          let paymentUrl = data.paymentUrl;
+          let offreChoisie = data.offreChoisie;
+          if (!paymentUrl) {
+            const texte = data.response.toLowerCase();
+            if (texte.includes('39') || texte.includes('99') || texte.includes('express') || texte.includes('premium') || texte.includes('formule')) {
+              paymentUrl = 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00'; // valeur non-null pour déclencher l'affichage
+              offreChoisie = texte.includes('premium') ? 'premium_99' : 'express_39';
+            }
+          }
+          addTypingMessage(data.response, paymentUrl, offreChoisie);
 
           if (data.sessionId) {
             currentSessionId = data.sessionId;
