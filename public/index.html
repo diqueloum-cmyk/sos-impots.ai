@@ -696,6 +696,9 @@
     // Variable pour empêcher les doubles soumissions
     let isProcessing = false;
 
+    // Compteur pour les IDs de messages uniques
+    let messageCounter = 0;
+
     // Fonction principale pour poser une question
     async function askGPT() {
       if (isProcessing) return;
@@ -774,7 +777,7 @@
     // Ajouter un message au chat
     function addMessage(message, sender, isLoading = false) {
       const chatContainer = document.getElementById('chatContainer');
-      const messageId = 'msg_' + Date.now();
+      const messageId = 'msg_' + (++messageCounter);
 
       if (sender === 'user') {
         const messageDiv = document.createElement('div');
