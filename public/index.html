@@ -7,93 +7,488 @@
   <meta name="description" content="Obtenez des conseils fiscaux instantanés avec notre IA spécialisée. Accès direct à des fiscalistes qualifiés à tarif préférentiel." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Poppins', sans-serif; }
+    body { font-family: 'Inter', sans-serif; }
     .typing-cursor { animation: blink 1s infinite; }
     @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
 
+    /* === HERO VARIABLES === */
+    :root {
+      --navy: #0F1F3D;
+      --blue: #1A56DB;
+      --blue-light: #EFF6FF;
+      --green: #057A55;
+      --green-light: #F0FDF4;
+      --orange: #C05621;
+      --orange-light: #FFF7ED;
+      --gray: #6B7280;
+      --border: #E5E7EB;
+      --white: #FFFFFF;
+    }
+
+    /* === NAV === */
+    .top-nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .top-nav-logo {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--navy);
+      letter-spacing: -0.5px;
+    }
+    .top-nav-logo span { color: var(--blue); }
+    .top-nav ul {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .top-nav ul li a {
+      font-size: 13px;
+      color: var(--gray);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .top-nav ul li a:hover { color: var(--navy); }
+    @media (max-width: 768px) {
+      .top-nav { padding: 0 16px; }
+      .top-nav ul { display: none; }
+    }
+
+    /* === HEADLINE BANNER === */
+    .headline-banner {
+      background: var(--navy);
+      padding: 14px 40px;
+      text-align: center;
+    }
+    .headline-banner p {
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      letter-spacing: 0.3px;
+    }
+    .headline-banner strong { color: white; font-weight: 600; }
+
+    /* === HERO LAYOUT === */
+    .hero-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      .hero-section {
+        grid-template-columns: 1fr;
+        padding: 32px 16px;
+        gap: 32px;
+      }
+    }
+
+    /* === CHAT BLOCK === */
+    .chat-block {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(15,31,61,0.08);
+    }
+    .chat-header {
+      background: var(--navy);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-header-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 6px #22C55E;
+    }
+    .chat-header-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--white);
+      letter-spacing: 0.3px;
+    }
+    .chat-header-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.15);
+      color: var(--white);
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .chat-body {
+      padding: 20px;
+      min-height: 320px;
+      max-height: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .chat-notice {
+      background: #F0F9FF;
+      border: 1px solid #BAE6FD;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #0369A1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .msg-ai {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .msg-ai-avatar {
+      width: 32px; height: 32px;
+      background: var(--navy);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+    .msg-ai-bubble {
+      background: #F1F5F9;
+      border-radius: 0 12px 12px 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--navy);
+      max-width: 85%;
+    }
+    .msg-user {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .msg-user-bubble {
+      background: var(--blue);
+      color: white;
+      border-radius: 12px 0 12px 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 85%;
+      white-space: pre-line;
+    }
+    .chat-input-area {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+    .chat-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      color: var(--navy);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .chat-input:focus { border-color: var(--blue); }
+    .chat-input::placeholder { color: #9CA3AF; }
+    .chat-send {
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chat-send:hover { background: #1347BE; }
+    .chat-send:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* === RIGHT BLOCK === */
+    .hero-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-top: 8px;
+    }
+    .hero-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--navy);
+      letter-spacing: -0.5px;
+    }
+    .hero-title span { color: var(--blue); }
+    .hero-subtitle {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--gray);
+    }
+
+    /* === OFFER CARDS === */
+    .offer-card {
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .offer-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    .offer-card.blue { background: var(--blue-light); border: 1px solid #BFDBFE; }
+    .offer-card.green { background: var(--green-light); border: 1px solid #BBF7D0; }
+    .offer-card.orange { background: var(--orange-light); border: 1px solid #FED7AA; }
+    .offer-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .offer-icon.blue { background: #DBEAFE; }
+    .offer-icon.green { background: #DCFCE7; }
+    .offer-icon.orange { background: #FFEDD5; }
+    .offer-content { flex: 1; }
+    .offer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .offer-name {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .offer-price {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .offer-price.blue { color: var(--blue); }
+    .offer-price.green { color: var(--green); }
+    .offer-price.orange { color: var(--orange); }
+    .offer-desc { font-size: 12px; color: var(--gray); line-height: 1.5; }
+    .offer-tag {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .offer-tag.blue { background: #DBEAFE; color: #1E40AF; }
+    .offer-tag.green { background: #DCFCE7; color: #166534; }
+    .offer-tag.orange { background: #FFEDD5; color: #9A3412; }
+
+    /* === TRUST BAR === */
+    .trust-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      padding-top: 4px;
+    }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--gray);
+      font-weight: 500;
+    }
+    .trust-item svg { color: #22C55E; }
+
+    /* === TYPING ANIMATION === */
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding: 8px 0;
+    }
+    .typing-dots span {
+      width: 6px; height: 6px;
+      background: #9CA3AF;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
   </style>
 </head>
 <body class="bg-white text-gray-800">
 
   <!-- Cookie Banner and Modal will be created dynamically by cookies.js -->
 
-  <!-- Header -->
-  <header class="bg-blue-900 text-white p-3 md:p-4">
-    <div class="max-w-6xl mx-auto flex justify-between items-center gap-2">
-      <div class="whitespace-nowrap">
-        <span class="font-bold text-xl md:text-3xl">SOS-IMPOTS.AI</span>
-      </div>
-      <nav id="mainNav" class="hidden md:flex space-x-6">
-        <a href="#about">À propos</a>
-        <a href="#features">Services</a>
-        <a href="#pricing">Tarifs et Comment ça marche ?</a>
-        <a href="#testimonials">Témoignages</a>
-        <a href="#faq">FAQ</a>
-        <a href="#contact">Contact</a>
-      </nav>
-    </div>
-  </header>
+  <!-- Nav -->
+  <nav class="top-nav">
+    <div class="top-nav-logo">SOS<span>-IMPOTS</span>.AI</div>
+    <ul>
+      <li><a href="#about">À propos</a></li>
+      <li><a href="#features">Services</a></li>
+      <li><a href="#pricing">Tarifs</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- Headline Banner -->
+  <div class="headline-banner">
+    <p><strong>Une question fiscale offerte</strong> — Notre IA vous répond immédiatement, sans inscription.</p>
+  </div>
 
   <!-- Hero -->
   <main>
-  <section id="heroSection" class="bg-blue-50 py-16 px-4">
-    <div class="max-w-6xl mx-auto">
-      <h1 class="text-3xl font-bold text-blue-900 mb-8 text-center">
-        <span class="font-bold text-3xl">SOS-IMPOTS.AI</span> associe IA fiscale et fiscalistes spécialisés pour vous offrir une approche simplifiée et experte de la fiscalité.
-      </h1>
-      <div class="flex flex-col md:flex-row items-stretch gap-8">
-        <div class="md:w-1/2">
-          <video src="video_sos-impots.mp4" alt="sos-impots.ai - Conseil fiscal en ligne" class="w-full h-full min-h-80 object-cover rounded-lg shadow-lg" autoplay loop muted playsinline></video>
+  <div style="background: #F8FAFC;">
+  <section class="hero-section">
+
+    <!-- Colonne gauche : Chat -->
+    <div class="chat-block">
+      <div class="chat-header">
+        <div class="chat-header-dot"></div>
+        <div class="chat-header-title">Agent Fiscal SOS-IMPOTS.AI</div>
+        <div class="chat-header-badge">🔒 Chiffré</div>
+      </div>
+
+      <div class="chat-body" id="chatContainer">
+        <div class="chat-notice">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Une question fiscale offerte — réponse immédiate par notre IA
         </div>
-        <div class="md:w-1/2 flex flex-col justify-center text-left">
-        <p class="text-lg text-gray-600 mb-6">Notre assistant IA répond à vos questions fiscales sur la base des textes de loi et de la jurisprudence. Il identifie les points clés de votre dossier et prépare une synthèse des informations utiles et nécessaires pour une bonne gestion de votre fiscalité.</p>
-        <p class="text-lg text-gray-600 mb-6">Vous pouvez bénéficier ensuite :</p>
-        <div class="space-y-3">
-          <div class="flex items-center space-x-2">
-            <span>➡️ d'une analyse personnalisée de votre situation fiscale,</span>
+        <div class="msg-ai">
+          <div class="msg-ai-avatar">⚖️</div>
+          <div class="msg-ai-bubble">
+            Bonjour ! Je suis l'agent fiscal de SOS-IMPOTS.AI.<br>
+            Quelle est votre question fiscale ?
           </div>
-          <div class="flex items-center space-x-2">
-            <span>➡️ d'une proposition de solutions adaptées,</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span>➡️ d'une mise en relation directe avec un fiscaliste partenaire expérimenté.</span>
-          </div>
-        </div>
-        <p class="text-lg text-gray-600 mb-6">🔒 Service confidentiel, rapide, sans engagement.</p>
         </div>
       </div>
+
+      <div class="chat-input-area">
+        <input class="chat-input" type="text" id="userInput" placeholder="Posez votre question fiscale...">
+        <button class="chat-send" onclick="askGPT()">
+          <span id="sendBtn" style="display:flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Envoyer
+          </span>
+          <span id="loadingBtn" style="display:none;">Envoi...</span>
+        </button>
+      </div>
     </div>
-  </section>
 
-  <!-- Chatbot Section with History Sidebar -->
-  <section class="py-16 px-4 bg-white">
-    <div class="max-w-6xl mx-auto">
-      <h2 class="text-3xl font-bold text-center text-blue-900 mb-8">Posez votre question ici</h2>
+    <!-- Colonne droite : Offres -->
+    <div class="hero-right">
+      <div>
+        <h1 class="hero-title">
+          Posez votre question fiscale —<br>
+          <span>c'est gratuit et immédiat.</span>
+        </h1>
+      </div>
 
-      <div class="bg-gray-50 rounded-lg p-3 md:p-6 shadow-lg">
-          <div id="chatContainer" class="space-y-4 mb-4" style="max-height: 400px; overflow-y: auto;">
-            <div class="text-center text-gray-500">
-              <p>Notre IA spécialisée va vous répondre.</p>
-            </div>
+      <p class="hero-subtitle">
+        Notre IA, entraînée sur le droit fiscal français, vous fournit une <strong>information claire et immédiate</strong> sur la base des textes de loi et de la jurisprudence.
+        <br><br>
+        Si vous souhaitez aller plus loin, choisissez la formule adaptée à votre situation :
+      </p>
+
+      <!-- Offre 1 -->
+      <div class="offer-card blue">
+        <div class="offer-icon blue">📊</div>
+        <div class="offer-content">
+          <div class="offer-header">
+            <div class="offer-name">Analyse Express IA</div>
+            <div class="offer-price blue">39 €</div>
           </div>
-          <div class="flex space-x-2">
-            <input type="text" id="userInput" placeholder="Ex: Quelles sont mes déductions fiscales possibles ?" class="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0">
-            <button onclick="askGPT()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors min-w-[48px] flex-shrink-0">
-              <span id="sendBtn">
-                <span class="hidden max-[500px]:inline">↑</span>
-                <span class="max-[500px]:hidden">Envoyer</span>
-              </span>
-              <span id="loadingBtn" class="hidden">
-                <span class="hidden max-[500px]:inline">...</span>
-                <span class="max-[500px]:hidden">Envoi...</span>
-              </span>
-            </button>
-          </div>
+          <div class="offer-desc">Pour les situations simples : salaires, déclaration, crédits d'impôt, courrier fiscal.</div>
+          <span class="offer-tag blue">⏱ Sous 24h ouvrées</span>
         </div>
+      </div>
+
+      <!-- Offre 2 -->
+      <div class="offer-card green">
+        <div class="offer-icon green">✅</div>
+        <div class="offer-content">
+          <div class="offer-header">
+            <div class="offer-name">Analyse Premium IA + Fiscaliste</div>
+            <div class="offer-price green">99 €</div>
+          </div>
+          <div class="offer-desc">Pour les situations intermédiaires : foncier, plus-values, indépendants, rectification.</div>
+          <span class="offer-tag green">⏱ Sous 48h ouvrées</span>
+        </div>
+      </div>
+
+      <!-- Offre 3 -->
+      <div class="offer-card orange">
+        <div class="offer-icon orange">⚖️</div>
+        <div class="offer-content">
+          <div class="offer-header">
+            <div class="offer-name">Mise en relation avocat fiscaliste</div>
+            <div class="offer-price orange">Gratuit</div>
+          </div>
+          <div class="offer-desc">Pour les situations complexes : courrier administration, contrôle fiscal, redressement, contentieux, enjeu > 5 000 €.</div>
+          <span class="offer-tag orange">⏱ Contact sous 24h ouvrées</span>
+        </div>
+      </div>
+
+      <!-- Trust bar -->
+      <div class="trust-bar">
+        <div class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Confidentiel
+        </div>
+        <div class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Chiffré SSL
+        </div>
+        <div class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Conforme RGPD
+        </div>
+        <div class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Sans engagement
+        </div>
+      </div>
+
     </div>
   </section>
+  </div>
 
   <!-- About Section -->
   <section id="about" class="py-16 px-4 bg-gray-50">
@@ -322,8 +717,8 @@
 
       const sendBtn = document.getElementById('sendBtn');
       const loadingBtn = document.getElementById('loadingBtn');
-      sendBtn.classList.add('hidden');
-      loadingBtn.classList.remove('hidden');
+      sendBtn.style.display = 'none';
+      loadingBtn.style.display = 'inline';
 
       try {
         const response = await fetch('/api/chat', {
@@ -370,8 +765,8 @@
         removeMessage(loadingId);
         addMessage('Erreur: ' + error.message + '. Veuillez réessayer.', 'assistant');
       } finally {
-        sendBtn.classList.remove('hidden');
-        loadingBtn.classList.add('hidden');
+        sendBtn.style.display = 'flex';
+        loadingBtn.style.display = 'none';
         isProcessing = false;
       }
     }
@@ -379,50 +774,49 @@
     // Ajouter un message au chat
     function addMessage(message, sender, isLoading = false) {
       const chatContainer = document.getElementById('chatContainer');
-      const messageDiv = document.createElement('div');
       const messageId = 'msg_' + Date.now();
-      
-      messageDiv.id = messageId;
-      messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-      
-      const messageContent = document.createElement('div');
-      messageContent.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-line ${
-        sender === 'user'
-          ? 'bg-blue-600 text-white'
-          : 'bg-gray-200 text-gray-800'
-      }`;
-      
-      if (isLoading) {
-        // Créer le contenu de manière sûre sans innerHTML
-        const textSpan = document.createElement('span');
-        textSpan.textContent = message;
-        const cursorSpan = document.createElement('span');
-        cursorSpan.className = 'typing-cursor';
-        messageContent.appendChild(textSpan);
-        messageContent.appendChild(cursorSpan);
+
+      if (sender === 'user') {
+        const messageDiv = document.createElement('div');
+        messageDiv.id = messageId;
+        messageDiv.className = 'msg-user';
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-user-bubble';
+        bubble.textContent = message;
+        messageDiv.appendChild(bubble);
+        chatContainer.appendChild(messageDiv);
       } else {
-        messageContent.textContent = message;
+        const messageDiv = document.createElement('div');
+        messageDiv.id = messageId;
+        messageDiv.className = 'msg-ai';
+        const avatar = document.createElement('div');
+        avatar.className = 'msg-ai-avatar';
+        avatar.textContent = '⚖️';
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-ai-bubble';
+        if (isLoading) {
+          const textSpan = document.createElement('span');
+          textSpan.textContent = message;
+          const cursorSpan = document.createElement('span');
+          cursorSpan.className = 'typing-cursor';
+          bubble.appendChild(textSpan);
+          bubble.appendChild(cursorSpan);
+        } else {
+          bubble.textContent = message;
+        }
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        chatContainer.appendChild(messageDiv);
       }
-      
-      messageDiv.appendChild(messageContent);
-      chatContainer.appendChild(messageDiv);
-      
-      // Scroll vers le bas
+
       chatContainer.scrollTop = chatContainer.scrollHeight;
-      
       return messageId;
     }
 
     // Supprimer un message
     function removeMessage(messageId) {
-      console.log('Trying to remove message with ID:', messageId);
       const message = document.getElementById(messageId);
-      if (message) {
-        console.log('Message found, removing:', message);
-        message.remove();
-      } else {
-        console.warn('Message not found with ID:', messageId);
-      }
+      if (message) message.remove();
     }
 
     // Ajouter un message avec effet de frappe
@@ -430,10 +824,15 @@
       const chatContainer = document.getElementById('chatContainer');
       const messageDiv = document.createElement('div');
 
-      messageDiv.className = 'flex justify-start';
+      messageDiv.className = 'msg-ai';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'msg-ai-avatar';
+      avatar.textContent = '⚖️';
+      messageDiv.appendChild(avatar);
 
       const messageContent = document.createElement('div');
-      messageContent.className = 'max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-200 text-gray-800 whitespace-pre-line';
+      messageContent.className = 'msg-ai-bubble';
 
       messageDiv.appendChild(messageContent);
       chatContainer.appendChild(messageDiv);
@@ -467,13 +866,13 @@
             const label = offreLabels[offreChoisie] || 'Payer maintenant';
 
             const btnWrapper = document.createElement('div');
-            btnWrapper.className = 'flex justify-start mt-2';
+            btnWrapper.style.cssText = 'display:flex;justify-content:flex-start;margin-top:8px;';
 
             const btn = document.createElement('a');
             btn.href = paymentUrl;
             btn.target = '_blank';
             btn.rel = 'noopener noreferrer';
-            btn.className = 'inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg shadow transition-colors text-sm';
+            btn.style.cssText = 'display:inline-block;background:#057A55;color:white;font-weight:600;padding:10px 20px;border-radius:8px;font-size:13px;text-decoration:none;';
             btn.textContent = '💳 ' + label;
 
             btnWrapper.appendChild(btn);
