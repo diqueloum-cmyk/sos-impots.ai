@@ -860,25 +860,52 @@
           cursorSpan.remove();
           clearInterval(typingInterval);
 
-          // Afficher le bouton de paiement après l'effet de frappe
+          // Afficher les boutons de choix d'offre après l'effet de frappe
           if (paymentUrl) {
-            const offreLabels = {
-              express_39: 'Analyse Express IA — 39 €',
-              premium_99: 'Analyse Premium IA + Fiscaliste — 99 €'
+            const STRIPE_LINKS = {
+              express_39: 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00',
+              premium_99: 'https://buy.stripe.com/bJe28qfUOa4i2hAff0ejK01'
             };
-            const label = offreLabels[offreChoisie] || 'Payer maintenant';
+
+            const offres = [
+              { id: 'express_39', label: 'Analyse Express IA', prix: '39 €', desc: 'Réponse par e-mail sous 48h' },
+              { id: 'premium_99', label: 'Analyse Premium IA + Fiscaliste', prix: '99 €', desc: 'Accompagnement complet avec expert' }
+            ];
 
             const btnWrapper = document.createElement('div');
-            btnWrapper.style.cssText = 'display:flex;justify-content:flex-start;margin-top:8px;';
+            btnWrapper.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:12px;';
 
-            const btn = document.createElement('a');
-            btn.href = paymentUrl;
-            btn.target = '_blank';
-            btn.rel = 'noopener noreferrer';
-            btn.style.cssText = 'display:inline-block;background:#057A55;color:white;font-weight:600;padding:10px 20px;border-radius:8px;font-size:13px;text-decoration:none;';
-            btn.textContent = '💳 ' + label;
+            offres.forEach(offre => {
+              const isRecommande = offre.id === offreChoisie;
+              const lien = STRIPE_LINKS[offre.id];
 
-            btnWrapper.appendChild(btn);
+              const btn = document.createElement('a');
+              btn.href = lien;
+              btn.target = '_blank';
+              btn.rel = 'noopener noreferrer';
+              btn.style.cssText = isRecommande
+                ? 'display:flex;align-items:center;justify-content:space-between;background:#057A55;color:white;font-weight:600;padding:12px 16px;border-radius:10px;font-size:13px;text-decoration:none;border:2px solid #057A55;'
+                : 'display:flex;align-items:center;justify-content:space-between;background:white;color:#057A55;font-weight:600;padding:12px 16px;border-radius:10px;font-size:13px;text-decoration:none;border:2px solid #057A55;';
+
+              const infoDiv = document.createElement('div');
+              const labelSpan = document.createElement('div');
+              labelSpan.style.cssText = 'font-weight:700;font-size:13px;';
+              labelSpan.textContent = (isRecommande ? '⭐ ' : '') + offre.label;
+              const descSpan = document.createElement('div');
+              descSpan.style.cssText = 'font-weight:400;font-size:11px;opacity:0.85;margin-top:2px;';
+              descSpan.textContent = offre.desc;
+              infoDiv.appendChild(labelSpan);
+              infoDiv.appendChild(descSpan);
+
+              const prixSpan = document.createElement('div');
+              prixSpan.style.cssText = 'font-size:16px;font-weight:800;margin-left:12px;white-space:nowrap;';
+              prixSpan.textContent = '💳 ' + offre.prix;
+
+              btn.appendChild(infoDiv);
+              btn.appendChild(prixSpan);
+              btnWrapper.appendChild(btn);
+            });
+
             chatContainer.appendChild(btnWrapper);
             chatContainer.scrollTop = chatContainer.scrollHeight;
           }
