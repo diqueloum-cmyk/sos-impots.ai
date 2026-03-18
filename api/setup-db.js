@@ -99,6 +99,16 @@ export default async function handler(req, res) {
     const conversationResult = await createConversationTables();
     logger.info('Tables de conversation créées');
 
+    // Migrations automatiques
+    await migrateConversationTablesForAnonymous();
+    logger.info('Migration anonymous réussie');
+
+    await migrateAddOpenaiThreadId();
+    logger.info('Migration openai_thread_id réussie');
+
+    await createOrdersTable();
+    logger.info('Table orders créée');
+
     logger.info('Base de données initialisée avec succès');
 
     return res.status(200).json({
