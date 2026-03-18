@@ -60,6 +60,8 @@ export default async function handler(req, res) {
   try {
     const { message, sessionId } = req.body;
 
+    logger.info('[DEBUG] Requête reçue:', { message: message?.substring(0, 30), sessionId, sessionIdType: typeof sessionId });
+
     if (!message || message.trim() === '') {
       return res.status(400).json({ error: 'Message is required' });
     }
@@ -188,6 +190,7 @@ export default async function handler(req, res) {
         if (conversationSessionId) {
           threadId = await getSessionThreadId(conversationSessionId);
         }
+        logger.info('[DEBUG] Thread récupéré:', { conversationSessionId, threadId });
 
         if (threadId) {
           // Vérifier que le thread existe toujours (fallback si expiré/supprimé)
