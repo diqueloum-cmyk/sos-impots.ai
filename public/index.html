@@ -1060,9 +1060,9 @@
       return results;
     }
 
-    // Surcharge de askGPT pour uploader les fichiers avant d'envoyer le message
-    const _originalAskGPT = askGPT;
-    async function askGPT() {
+    // Intercepter askGPT pour uploader les fichiers avant d'envoyer le message
+    const _askGPTCore = askGPT;
+    askGPT = async function() {
       // S'il y a des fichiers en attente, les uploader d'abord
       if (chatFilesQueue.some(f => f.status === 'pending')) {
         const uploadResults = await uploadChatFiles();
@@ -1088,9 +1088,9 @@
       // Envoyer le message texte si présent
       const userInput = document.getElementById('userInput');
       if (userInput.value.trim()) {
-        await _originalAskGPT();
+        await _askGPTCore();
       }
-    }
+    };
 
   </script>
 
