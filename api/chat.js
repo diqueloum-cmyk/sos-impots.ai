@@ -147,6 +147,32 @@ export default async function handler(req, res) {
       answer = cachedResponse.answer;
       fromCache = true;
       logger.info('Réponse servie depuis le cache (hit count:', cachedResponse.hitCount, ')');
+
+      // Même en cas de cache, créer un thread OpenAI pour que la suite de la conversation fonctionne
+      if (conversationSessionId) {
+        try {
+          const existingThreadId = await getSessionThreadId(conversationSessionId);
+          if (!existingThreadId) {
+            const openaiHeaders = {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+              'OpenAI-Beta': 'assistants=v2'
+            };
+            const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+              method: 'POST',
+              headers: openaiHeaders,
+              body: JSON.stringify({})
+            });
+            if (threadResponse.ok) {
+              const threadData = await threadResponse.json();
+              await updateSessionThreadId(conversationSessionId, threadData.id);
+              logger.debug('Thread OpenAI créé pour réponse en cache:', threadData.id);
+            }
+          }
+        } catch (e) {
+          logger.warn('Impossible de créer le thread OpenAI pour la réponse en cache:', e.message);
+        }
+      }
     } else {
       // Pas de cache, utiliser l'Assistant OpenAI
       try {
