@@ -87,7 +87,11 @@ export default async function handler(req, res) {
       });
     }
 
-    const ASSISTANT_ID = process.env.ASSISTANT_ID || 'asst_dwzcjEy7UaGPLek26oQ7mlZG';
+    const ASSISTANT_ID = process.env.ASSISTANT_ID;
+    if (!ASSISTANT_ID) {
+      logger.error('ASSISTANT_ID non configuré');
+      return res.status(500).json({ error: 'Configuration manquante.' });
+    }
 
     // Mesurer le temps de réponse
     const startTime = Date.now();
@@ -299,7 +303,7 @@ export default async function handler(req, res) {
         tokensUsed = Math.ceil((message.length + fullAnswer.length) / 4);
 
         // Sauvegarder dans le cache UNIQUEMENT pour les nouvelles conversations
-        if (isNewConversation && isSubstantialMessage) {
+        if (isNewConversation && isSubstantialMessage && !internalData) {
           await saveCachedAnswer(message, visibleResponse);
         }
 

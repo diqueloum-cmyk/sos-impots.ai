@@ -6,9 +6,78 @@ import logger from '../lib/logger.js';
 
 const NOTIFICATION_EMAIL = 'contact@sos-impots.ai';
 const FROM_EMAIL = 'onboarding@resend.dev';
-const UPLOAD_BASE_URL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : 'https://sos-impots.ai';
+
+/**
+ * Génère un mot de passe aléatoire de 12 caractères
+ */
+function generatePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
+/**
+ * Crée un File Request Dropbox pour le client
+ * Retourne { url, password } ou null en cas d'erreur
+ */
+async function createDropboxFileRequest({ clientName, date }) {
+  const token = process.env.DROPBOX_ACCESS_TOKEN;
+  if (!token) {
+    logger.error('DROPBOX_ACCESS_TOKEN non configuré — File Request non créé');
+    return null;
+  }
+
+  const password = generatePassword();
+  const title = `Dossier_${(clientName || 'Client').replace(/\s+/g, '_')}_${date}`;
+
+  const deadline = new Date();
+  deadline.setDate(deadline.getDate() + 30);
+
+  const response = await fetch('https://api.dropboxapi.com/2/file_requests/create', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      title,
+      destination: `/Dossiers clients/${title}`,
+      deadline: {
+        deadline: deadline.toISOString(),
+        allow_late_uploads: 'seven_days'
+      },
+      open: true,
+      description: 'Déposez ici vos documents fiscaux de manière sécurisée.'
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    logger.error('Erreur création File Request Dropbox:', err);
+    return null;
+  }
+
+  const data = await response.json();
+  logger.info('File Request Dropbox créé:', data.id);
+
+  // Activer la protection par mot de passe via update
+  await fetch('https://api.dropboxapi.com/2/file_requests/update', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      id: data.id,
+      open: true
+    })
+  });
+
+  return { url: data.url, password };
+}
 
 /**
  * Envoie un email via Resend
@@ -16,7 +85,7 @@ const UPLOAD_BASE_URL = process.env.VERCEL_URL
 async function sendEmail({ to, subject, html }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    logger.warn('RESEND_API_KEY non configuré — email non envoyé');
+    logger.error('RESEND_API_KEY non configuré — email non envoyé');
     return;
   }
 
@@ -38,11 +107,11 @@ async function sendEmail({ to, subject, html }) {
 }
 
 /**
- * Envoie l'email de confirmation au client avec lien d'upload
+ * Envoie l'email de confirmation au client avec lien Dropbox
  */
-async function sendConfirmationToClient({ email, name, offerType, amount, sessionId }) {
-  const uploadUrl = `${UPLOAD_BASE_URL}/deposer-documents?session=${sessionId}`;
-  const offerLabel = offerType === 'premium_99' ? 'Analyse Premium IA + Fiscaliste (99€)' : 'Analyse Express IA (39€)';
+async function sendConfirmationToClient({ email, name, offerType, dropboxUrl, dropboxPassword }) {
+  const offerLabel = offerType === 'premium_99' ? 'Analyse Premium IA + Fiscaliste' : 'Analyse Express IA';
+  const deliveryDelay = offerType === 'premium_99' ? '48h' : '24h';
 
   const html = `
     <div style="font-family: Inter, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #0F1F3D;">
@@ -50,28 +119,42 @@ async function sendConfirmationToClient({ email, name, offerType, amount, sessio
         <h1 style="color: white; font-size: 20px; margin: 0;">SOS-IMPOTS.AI</h1>
       </div>
       <div style="background: #f9fafb; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-        <h2 style="font-size: 18px; margin-top: 0;">Votre commande est confirmée ✅</h2>
         <p>Bonjour${name ? ' ' + name : ''},</p>
-        <p>Nous avons bien reçu votre paiement pour : <strong>${offerLabel}</strong></p>
+        <p>Merci pour votre commande.<br>
+        Votre <strong>${offerLabel}</strong> est bien enregistrée.</p>
+
+        <p>Déposez vos documents via votre espace sécurisé personnel :</p>
 
         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
-          <p style="margin: 0 0 16px 0; font-weight: 600;">Prochaine étape — Déposez vos documents</p>
-          <p style="margin: 0 0 16px 0; color: #6B7280; font-size: 14px;">
-            Pour que notre équipe puisse analyser votre situation fiscale, veuillez déposer vos documents (déclarations d'impôts, avis d'imposition, justificatifs...) via le lien sécurisé ci-dessous.
+          <p style="margin: 0 0 12px 0;">
+            🔒 <strong>Votre lien :</strong><br>
+            <a href="${dropboxUrl}" style="color: #1A56DB; word-break: break-all;">${dropboxUrl}</a>
           </p>
-          <a href="${uploadUrl}"
+          <p style="margin: 0 0 16px 0;">
+            🔑 <strong>Mot de passe :</strong> <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 14px;">${dropboxPassword}</code>
+          </p>
+          <a href="${dropboxUrl}"
              style="display: inline-block; background: #1A56DB; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
             📎 Déposer mes documents
           </a>
         </div>
 
+        <p style="font-size: 14px; color: #374151;"><strong>Documents à déposer :</strong></p>
+        <ul style="font-size: 14px; color: #6B7280; padding-left: 20px;">
+          <li>Proposition de rectification ou courrier reçu (scan ou photo)</li>
+          <li>Déclarations de revenus des années concernées</li>
+          <li>Tout justificatif que vous jugez utile</li>
+        </ul>
+
         <p style="font-size: 13px; color: #6B7280;">
-          Vos documents sont traités de manière confidentielle, dans le respect du RGPD.<br>
-          Vous recevrez votre analyse sous 24h ouvrées.
+          Vos documents sont protégés par un chiffrement SSL/TLS, hébergés en Europe, conformes RGPD.<br>
+          Aucun partage avec des tiers sans votre accord.<br><br>
+          Dès réception, votre analyse démarre immédiatement.<br>
+          Livraison sous <strong>${deliveryDelay} ouvrées</strong>.
         </p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
         <p style="font-size: 12px; color: #9CA3AF; margin: 0;">
-          SOS-IMPOTS.AI — contact@sos-impots.ai
+          L'équipe SOS-IMPOTS.AI — contact@sos-impots.ai
         </p>
       </div>
     </div>
@@ -79,7 +162,7 @@ async function sendConfirmationToClient({ email, name, offerType, amount, sessio
 
   await sendEmail({
     to: email,
-    subject: 'Votre commande SOS-IMPOTS.AI est confirmée — Déposez vos documents',
+    subject: 'Votre dossier SOS-IMPOTS.AI — Espace sécurisé pour vos documents',
     html
   });
 }
@@ -87,10 +170,9 @@ async function sendConfirmationToClient({ email, name, offerType, amount, sessio
 /**
  * Envoie la notification interne à contact@sos-impots.ai
  */
-async function sendInternalNotification({ email, name, offerType, amount, sessionId, checkoutId }) {
+async function sendInternalNotification({ email, name, offerType, amount, sessionId, checkoutId, dropboxUrl, dropboxPassword }) {
   const offerLabel = offerType === 'premium_99' ? 'Premium 99€' : 'Express 39€';
   const amountFormatted = amount ? `${(amount / 100).toFixed(2)}€` : 'N/A';
-  const uploadUrl = `${UPLOAD_BASE_URL}/deposer-documents?session=${sessionId}`;
 
   const html = `
     <div style="font-family: Inter, Arial, sans-serif; max-width: 600px; color: #0F1F3D;">
@@ -102,10 +184,9 @@ async function sendInternalNotification({ email, name, offerType, amount, sessio
         <tr><td style="padding: 8px 0; color: #6B7280;">Montant</td><td style="padding: 8px 0;">${amountFormatted}</td></tr>
         <tr><td style="padding: 8px 0; color: #6B7280;">Session</td><td style="padding: 8px 0; font-size: 12px; font-family: monospace;">${sessionId || 'N/A'}</td></tr>
         <tr><td style="padding: 8px 0; color: #6B7280;">Checkout ID</td><td style="padding: 8px 0; font-size: 12px; font-family: monospace;">${checkoutId}</td></tr>
+        <tr><td style="padding: 8px 0; color: #6B7280;">Lien Dropbox</td><td style="padding: 8px 0;">${dropboxUrl ? `<a href="${dropboxUrl}" style="color: #1A56DB;">${dropboxUrl}</a>` : '<span style="color: #DC2626;">⚠️ ÉCHEC — File Request non créé (vérifier DROPBOX_ACCESS_TOKEN et les logs Vercel)</span>'}</td></tr>
+        <tr><td style="padding: 8px 0; color: #6B7280;">Mot de passe</td><td style="padding: 8px 0; font-family: monospace;">${dropboxPassword || 'N/A'}</td></tr>
       </table>
-      <p style="margin-top: 16px;">
-        <a href="${uploadUrl}" style="color: #1A56DB;">Voir le dossier de dépôt →</a>
-      </p>
     </div>
   `;
 
@@ -232,14 +313,18 @@ export default async function handler(req, res) {
           const chatSessionId = session.metadata?.chat_session_id || session.client_reference_id || null;
 
           if (clientEmail) {
+            // Créer le File Request Dropbox
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const dropbox = await createDropboxFileRequest({ clientName, date });
+
             // Envoi en parallèle : email client + notification interne
             await Promise.all([
               sendConfirmationToClient({
                 email: clientEmail,
                 name: clientName,
                 offerType,
-                amount: amountTotal,
-                sessionId: chatSessionId || session.id
+                dropboxUrl: dropbox?.url || null,
+                dropboxPassword: dropbox?.password || null
               }),
               sendInternalNotification({
                 email: clientEmail,
@@ -247,7 +332,9 @@ export default async function handler(req, res) {
                 offerType,
                 amount: amountTotal,
                 sessionId: chatSessionId,
-                checkoutId: session.id
+                checkoutId: session.id,
+                dropboxUrl: dropbox?.url || null,
+                dropboxPassword: dropbox?.password || null
               })
             ]);
           } else {

@@ -5,7 +5,8 @@ import { sql } from '@vercel/postgres';
 import { logInfo, sendError, sendSuccess } from '../lib/utils.js';
 import {
   getAnonymousConversationSessions,
-  countAnonymousConversationSessions
+  countAnonymousConversationSessions,
+  deleteOldAnonymousSessions
 } from '../lib/db.js';
 
 export default async function handler(req, res) {
@@ -33,6 +34,8 @@ export default async function handler(req, res) {
         return await handleMessages(req, res, sessionId);
       case 'export':
         return await handleExport(req, res, dateFilter);
+      case 'cleanup':
+        return await handleCleanup(req, res);
       default:
         if (req.method === 'DELETE' && sessionId) {
           return await handleDelete(req, res, sessionId);
@@ -175,6 +178,15 @@ async function handleDelete(req, res, sessionId) {
     success: true,
     message: 'Conversation supprimée avec succès'
   });
+}
+
+/**
+ * Supprime les sessions anonymes de plus de 30 jours
+ */
+async function handleCleanup(req, res) {
+  const deleted = await deleteOldAnonymousSessions(30);
+  logInfo('info', 'Nettoyage sessions anonymes', { deleted });
+  return sendSuccess(res, { deleted });
 }
 
 /**

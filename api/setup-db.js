@@ -111,26 +111,6 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString(),
       info: {
         tables: {
-          users: {
-            columns: [
-              'id (SERIAL PRIMARY KEY)',
-              'first_name (VARCHAR 100)',
-              'last_name (VARCHAR 100)',
-              'email (VARCHAR 255 UNIQUE)',
-              'password_hash (VARCHAR 255)',
-              'registered_at (TIMESTAMP)',
-              'subscription_status (VARCHAR 50)',
-              'questions_used (INTEGER)',
-              'last_question_at (TIMESTAMP)',
-              'created_at (TIMESTAMP)',
-              'updated_at (TIMESTAMP)'
-            ],
-            indexes: [
-              'idx_email',
-              'idx_registered_at',
-              'idx_subscription'
-            ]
-          },
           chat_cache: {
             columns: [
               'id (SERIAL PRIMARY KEY)',
@@ -151,7 +131,7 @@ export default async function handler(req, res) {
           conversation_sessions: {
             columns: [
               'id (SERIAL PRIMARY KEY)',
-              'user_id (INTEGER REFERENCES users)',
+              'user_id (INTEGER)',
               'title (VARCHAR 255)',
               'started_at (TIMESTAMP)',
               'last_message_at (TIMESTAMP)',
