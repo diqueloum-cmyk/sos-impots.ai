@@ -843,21 +843,15 @@
             throw new Error('Aucune réponse reçue de l\'assistant');
           }
 
-          // Si l'agent mentionne les offres dans le texte mais sans bloc INTERNAL, forcer l'affichage des boutons
-          let paymentUrl = data.paymentUrl;
-          let offreChoisie = data.offreChoisie;
-          if (!paymentUrl) {
-            const texte = data.response.toLowerCase();
-            if (texte.includes('39') || texte.includes('99') || texte.includes('express') || texte.includes('premium') || texte.includes('formule')) {
-              paymentUrl = 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00';
-              offreChoisie = texte.includes('premium') ? 'premium_99' : 'express_39';
-            }
-          }
-          addTypingMessage(data.response, paymentUrl, offreChoisie);
+          const paymentUrl = data.paymentUrl || null;
+          const offreChoisie = data.offreChoisie || null;
 
           if (data.sessionId) {
             currentSessionId = data.sessionId;
           }
+          console.debug('[chat] sessionId reçu:', data.sessionId, '| currentSessionId:', currentSessionId);
+
+          addTypingMessage(data.response, paymentUrl, offreChoisie);
         } else {
           throw new Error(data.error || 'Erreur lors de la génération de la réponse');
         }
