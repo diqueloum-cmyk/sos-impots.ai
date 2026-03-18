@@ -12,6 +12,9 @@
     },
     "api/upload-document.js": {
       "maxDuration": 30
+    },
+    "api/test-payment.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [

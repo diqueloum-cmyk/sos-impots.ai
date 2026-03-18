@@ -1005,6 +1005,46 @@
             });
 
             chatContainer.appendChild(btnWrapper);
+
+            // Bouton de test (bypass paiement) — visible uniquement si session déverrouillée
+            if (sessionStorage.getItem('unlocked') === '1') {
+              const testBtn = document.createElement('button');
+              testBtn.style.cssText = 'margin-top:8px;width:100%;background:#FEF3C7;color:#92400E;border:1.5px dashed #F59E0B;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;text-align:left;';
+              testBtn.textContent = '🧪 [TEST] Simuler le paiement et envoyer les emails';
+              testBtn.onclick = async function() {
+                const emailTest = prompt('Email de destination pour le test :');
+                if (!emailTest) return;
+                const nomTest = prompt('Nom du client (optionnel) :') || '';
+                testBtn.textContent = '⏳ Envoi en cours...';
+                testBtn.disabled = true;
+                try {
+                  const resp = await fetch('/api/test-payment', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Admin-Key': 'sos-test-2025'
+                    },
+                    body: JSON.stringify({ email: emailTest, name: nomTest, offerType: offreChoisie || 'express_39' })
+                  });
+                  const data = await resp.json();
+                  if (resp.ok && data.success) {
+                    testBtn.textContent = '✅ Emails envoyés !' + (data.dropboxCreated ? ' (Dropbox OK)' : ' (Dropbox ÉCHEC)');
+                    testBtn.style.background = '#F0FDF4';
+                    testBtn.style.borderColor = '#86EFAC';
+                    testBtn.style.color = '#166534';
+                  } else {
+                    testBtn.textContent = '❌ Erreur : ' + (data.error || 'inconnue');
+                    testBtn.style.background = '#FEF2F2';
+                    testBtn.style.color = '#DC2626';
+                  }
+                } catch(e) {
+                  testBtn.textContent = '❌ Erreur réseau';
+                  testBtn.disabled = false;
+                }
+              };
+              chatContainer.appendChild(testBtn);
+            }
+
             chatContainer.scrollTop = chatContainer.scrollHeight;
           }
         }
