@@ -10,11 +10,14 @@
     "api/stripe-webhook.js": {
       "maxDuration": 30
     },
-    "api/upload-document.js": {
+"api/test-payment.js": {
       "maxDuration": 30
     },
-    "api/test-payment.js": {
-      "maxDuration": 30
+    "api/dropbox-auth.js": {
+      "maxDuration": 10
+    },
+    "api/dropbox-callback.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [

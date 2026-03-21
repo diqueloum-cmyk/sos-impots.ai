@@ -2,82 +2,11 @@
 // Stripe envoie une signature dans le header stripe-signature pour vérifier l'authenticité
 
 import { updateOrderByCheckoutId } from '../lib/db.js';
+import { createDropboxFileRequest } from '../lib/dropbox.js';
 import logger from '../lib/logger.js';
 
 const NOTIFICATION_EMAIL = 'contact@sos-impots.ai';
 const FROM_EMAIL = 'onboarding@resend.dev';
-
-/**
- * Génère un mot de passe aléatoire de 12 caractères
- */
-function generatePassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  let password = '';
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
-
-/**
- * Crée un File Request Dropbox pour le client
- * Retourne { url, password } ou null en cas d'erreur
- */
-async function createDropboxFileRequest({ clientName, date }) {
-  const token = process.env.DROPBOX_ACCESS_TOKEN;
-  if (!token) {
-    logger.error('DROPBOX_ACCESS_TOKEN non configuré — File Request non créé');
-    return null;
-  }
-
-  const password = generatePassword();
-  const title = `Dossier_${(clientName || 'Client').replace(/\s+/g, '_')}_${date}`;
-
-  const deadline = new Date();
-  deadline.setDate(deadline.getDate() + 30);
-
-  const response = await fetch('https://api.dropboxapi.com/2/file_requests/create', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      title,
-      destination: `/Dossiers clients/${title}`,
-      deadline: {
-        deadline: deadline.toISOString(),
-        allow_late_uploads: 'seven_days'
-      },
-      open: true,
-      description: 'Déposez ici vos documents fiscaux de manière sécurisée.'
-    })
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    logger.error('Erreur création File Request Dropbox:', err);
-    return null;
-  }
-
-  const data = await response.json();
-  logger.info('File Request Dropbox créé:', data.id);
-
-  // Activer la protection par mot de passe via update
-  await fetch('https://api.dropboxapi.com/2/file_requests/update', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      id: data.id,
-      open: true
-    })
-  });
-
-  return { url: data.url, password };
-}
 
 /**
  * Envoie un email via Resend
@@ -184,7 +113,7 @@ async function sendInternalNotification({ email, name, offerType, amount, sessio
         <tr><td style="padding: 8px 0; color: #6B7280;">Montant</td><td style="padding: 8px 0;">${amountFormatted}</td></tr>
         <tr><td style="padding: 8px 0; color: #6B7280;">Session</td><td style="padding: 8px 0; font-size: 12px; font-family: monospace;">${sessionId || 'N/A'}</td></tr>
         <tr><td style="padding: 8px 0; color: #6B7280;">Checkout ID</td><td style="padding: 8px 0; font-size: 12px; font-family: monospace;">${checkoutId}</td></tr>
-        <tr><td style="padding: 8px 0; color: #6B7280;">Lien Dropbox</td><td style="padding: 8px 0;">${dropboxUrl ? `<a href="${dropboxUrl}" style="color: #1A56DB;">${dropboxUrl}</a>` : '<span style="color: #DC2626;">⚠️ ÉCHEC — File Request non créé (vérifier DROPBOX_ACCESS_TOKEN et les logs Vercel)</span>'}</td></tr>
+        <tr><td style="padding: 8px 0; color: #6B7280;">Lien Dropbox</td><td style="padding: 8px 0;">${dropboxUrl ? `<a href="${dropboxUrl}" style="color: #1A56DB;">${dropboxUrl}</a>` : '<span style="color: #DC2626;">⚠️ ÉCHEC — File Request non créé (vérifier les tokens Dropbox et les logs Vercel)</span>'}</td></tr>
         <tr><td style="padding: 8px 0; color: #6B7280;">Mot de passe</td><td style="padding: 8px 0; font-family: monospace;">${dropboxPassword || 'N/A'}</td></tr>
       </table>
     </div>

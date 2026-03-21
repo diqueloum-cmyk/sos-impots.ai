@@ -227,48 +227,6 @@
     }
     .chat-send:hover { background: #1347BE; }
     .chat-send:disabled { opacity: 0.6; cursor: not-allowed; }
-    .chat-attach {
-      background: white;
-      color: var(--gray);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 13px;
-      cursor: pointer;
-      font-family: 'Inter', sans-serif;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-    }
-    .chat-attach:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
-    .chat-attach:disabled { opacity: 0.5; cursor: not-allowed; }
-    .upload-preview {
-      padding: 8px 20px 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .upload-file-chip {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--blue-light);
-      border: 1px solid #BFDBFE;
-      border-radius: 20px;
-      padding: 4px 10px 4px 8px;
-      font-size: 12px;
-      color: var(--navy);
-    }
-    .upload-file-chip.uploading { opacity: 0.6; }
-    .upload-file-chip.success { background: #F0FDF4; border-color: #86EFAC; }
-    .upload-file-chip.error { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
-    .chip-remove {
-      background: none; border: none; cursor: pointer; padding: 0;
-      color: #9CA3AF; font-size: 14px; line-height: 1;
-    }
-    .chip-remove:hover { color: #374151; }
 
     /* === RIGHT BLOCK === */
     .hero-right {
@@ -479,16 +437,7 @@
         </div>
       </div>
 
-      <!-- Aperçu des fichiers sélectionnés -->
-      <div class="upload-preview" id="uploadPreview"></div>
-
       <div class="chat-input-area">
-        <button class="chat-attach" id="attachBtn" onclick="document.getElementById('chatFileInput').click()" title="Joindre un document">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-          <span class="attach-label">Joindre</span>
-        </button>
-        <input type="file" id="chatFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-               style="display:none;" onchange="handleChatFiles(this.files)">
         <input class="chat-input" type="text" id="userInput" placeholder="Posez votre question fiscale...">
         <button class="chat-send" onclick="askGPT()">
           <span id="sendBtn" style="display:flex;align-items:center;gap:6px;">
@@ -1055,113 +1004,6 @@
       }
     });
 
-    // =============================================
-    // UPLOAD DE DOCUMENTS DANS LE CHAT
-    // =============================================
-
-    let chatFilesQueue = []; // { file, id, status: 'pending'|'uploading'|'done'|'error' }
-
-    function handleChatFiles(fileList) {
-      for (const file of fileList) {
-        // Éviter les doublons
-        if (chatFilesQueue.find(f => f.file.name === file.name && f.file.size === file.size)) continue;
-        const id = 'chip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-        chatFilesQueue.push({ file, id, status: 'pending' });
-        renderChip({ file, id, status: 'pending' });
-      }
-      // Reset input pour permettre re-sélection du même fichier
-      document.getElementById('chatFileInput').value = '';
-    }
-
-    function renderChip({ file, id, status }) {
-      const preview = document.getElementById('uploadPreview');
-      const chip = document.createElement('div');
-      chip.className = 'upload-file-chip';
-      chip.id = id;
-      chip.innerHTML = `
-        <span>${getExtIcon(file.name)}</span>
-        <span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${file.name}">${file.name}</span>
-        <button class="chip-remove" onclick="removeChatFile('${id}')" title="Retirer">✕</button>
-      `;
-      preview.appendChild(chip);
-    }
-
-    function removeChatFile(id) {
-      chatFilesQueue = chatFilesQueue.filter(f => f.id !== id);
-      document.getElementById(id)?.remove();
-    }
-
-    function getExtIcon(filename) {
-      const ext = filename.split('.').pop().toLowerCase();
-      const icons = { pdf: '📄', jpg: '🖼️', jpeg: '🖼️', png: '🖼️', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊' };
-      return icons[ext] || '📎';
-    }
-
-    async function uploadChatFiles() {
-      const pending = chatFilesQueue.filter(f => f.status === 'pending');
-      if (pending.length === 0) return [];
-
-      const results = [];
-      for (const entry of pending) {
-        entry.status = 'uploading';
-        const chip = document.getElementById(entry.id);
-        if (chip) chip.classList.add('uploading');
-
-        try {
-          const formData = new FormData();
-          formData.append('file', entry.file);
-          formData.append('sessionId', currentSessionId || '');
-
-          const resp = await fetch('/api/upload-document', { method: 'POST', body: formData });
-          const data = await resp.json();
-
-          if (resp.ok && data.success) {
-            entry.status = 'done';
-            if (chip) { chip.classList.remove('uploading'); chip.classList.add('success'); }
-            results.push({ name: entry.file.name, success: true });
-          } else {
-            throw new Error(data.error || 'Erreur upload');
-          }
-        } catch (err) {
-          entry.status = 'error';
-          if (chip) { chip.classList.remove('uploading'); chip.classList.add('error'); }
-          results.push({ name: entry.file.name, success: false, error: err.message });
-        }
-      }
-      return results;
-    }
-
-    // Intercepter askGPT pour uploader les fichiers avant d'envoyer le message
-    const _askGPTCore = askGPT;
-    askGPT = async function() {
-      // S'il y a des fichiers en attente, les uploader d'abord
-      if (chatFilesQueue.some(f => f.status === 'pending')) {
-        const uploadResults = await uploadChatFiles();
-        const successCount = uploadResults.filter(r => r.success).length;
-        const failCount = uploadResults.filter(r => !r.success).length;
-
-        // Ajouter un message résumé dans le chat
-        let uploadSummary = '';
-        if (successCount > 0) uploadSummary += `📎 ${successCount} document${successCount > 1 ? 's' : ''} déposé${successCount > 1 ? 's' : ''} avec succès. `;
-        if (failCount > 0) uploadSummary += `⚠️ ${failCount} fichier${failCount > 1 ? 's' : ''} en erreur.`;
-
-        if (uploadSummary) {
-          addMessage(uploadSummary.trim(), 'assistant');
-        }
-
-        // Nettoyer les chips réussies après un délai
-        setTimeout(() => {
-          chatFilesQueue = chatFilesQueue.filter(f => f.status !== 'done');
-          document.querySelectorAll('.upload-file-chip.success').forEach(el => el.remove());
-        }, 2000);
-      }
-
-      // Envoyer le message texte si présent
-      const userInput = document.getElementById('userInput');
-      if (userInput.value.trim()) {
-        await _askGPTCore();
-      }
-    };
 
   </script>
 

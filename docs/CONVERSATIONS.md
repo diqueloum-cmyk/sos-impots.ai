@@ -23,7 +23,7 @@ Stocke les sessions de conversation (une session = une conversation continue).
 ```sql
 CREATE TABLE conversation_sessions (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id INTEGER,
   title VARCHAR(255) DEFAULT 'Nouvelle conversation',
   started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

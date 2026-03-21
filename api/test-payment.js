@@ -3,51 +3,10 @@
 
 import logger from '../lib/logger.js';
 import { setCorsHeaders, handleCorsPreflight } from '../lib/utils.js';
+import { createDropboxFileRequest } from '../lib/dropbox.js';
 
 const NOTIFICATION_EMAIL = 'contact@sos-impots.ai';
 const FROM_EMAIL = 'onboarding@resend.dev';
-
-function generatePassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  let password = '';
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
-
-async function createDropboxFileRequest({ clientName, date }) {
-  const token = process.env.DROPBOX_ACCESS_TOKEN;
-  if (!token) {
-    logger.error('DROPBOX_ACCESS_TOKEN non configuré — File Request non créé');
-    return null;
-  }
-
-  const password = generatePassword();
-  const title = `Dossier_${(clientName || 'Client').replace(/\s+/g, '_')}_${date}`;
-  const deadline = new Date();
-  deadline.setDate(deadline.getDate() + 30);
-
-  const response = await fetch('https://api.dropboxapi.com/2/file_requests/create', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title,
-      destination: `/Dossiers clients/${title}`,
-      deadline: { deadline: deadline.toISOString(), allow_late_uploads: 'seven_days' },
-      open: true
-    })
-  });
-
-  if (!response.ok) {
-    logger.error('Erreur création File Request Dropbox:', await response.text());
-    return null;
-  }
-
-  const data = await response.json();
-  logger.info('File Request Dropbox créé (test):', data.id);
-  return { url: data.url, password };
-}
 
 async function sendEmail({ to, subject, html }) {
   const apiKey = process.env.RESEND_API_KEY;
