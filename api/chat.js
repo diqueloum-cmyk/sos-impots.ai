@@ -22,15 +22,22 @@ import logger from '../lib/logger.js';
  * @param {string} fullResponse - Réponse complète de l'assistant
  * @returns {{ visibleResponse: string, internalData: object|null }}
  */
+/**
+ * Supprime les annotations File Search d'OpenAI (ex: 【4:0†fichier.txt】)
+ */
+function stripFileSearchAnnotations(text) {
+  return text.replace(/【[^】]*】/g, '').replace(/ {2,}/g, ' ').trim();
+}
+
 function parseAgentResponse(fullResponse) {
   const separator = '---INTERNAL---';
   const separatorIndex = fullResponse.indexOf(separator);
 
   if (separatorIndex === -1) {
-    return { visibleResponse: fullResponse.trim(), internalData: null };
+    return { visibleResponse: stripFileSearchAnnotations(fullResponse.trim()), internalData: null };
   }
 
-  const visibleResponse = fullResponse.substring(0, separatorIndex).trim();
+  const visibleResponse = stripFileSearchAnnotations(fullResponse.substring(0, separatorIndex).trim());
   const jsonString = fullResponse.substring(separatorIndex + separator.length).trim();
 
   let internalData = null;
@@ -150,7 +157,8 @@ export default async function handler(req, res) {
       fromCache = true;
       logger.info('Réponse servie depuis le cache (hit count:', cachedResponse.hitCount, ')');
 
-      // Même en cas de cache, créer un thread OpenAI pour que la suite de la conversation fonctionne
+      // Même en cas de cache, créer un thread OpenAI avec le contexte
+      // pour que la suite de la conversation fonctionne
       if (conversationSessionId) {
         try {
           const existingThreadId = await getSessionThreadId(conversationSessionId);
@@ -160,15 +168,21 @@ export default async function handler(req, res) {
               'Content-Type': 'application/json',
               'OpenAI-Beta': 'assistants=v2'
             };
+            // Créer le thread avec la question et la réponse cachée pré-remplies
             const threadResponse = await fetch('https://api.openai.com/v1/threads', {
               method: 'POST',
               headers: openaiHeaders,
-              body: JSON.stringify({})
+              body: JSON.stringify({
+                messages: [
+                  { role: 'user', content: message },
+                  { role: 'assistant', content: answer }
+                ]
+              })
             });
             if (threadResponse.ok) {
               const threadData = await threadResponse.json();
               await updateSessionThreadId(conversationSessionId, threadData.id);
-              logger.debug('Thread OpenAI créé pour réponse en cache:', threadData.id);
+              logger.debug('Thread OpenAI créé avec contexte cache:', threadData.id);
             }
           }
         } catch (e) {
