@@ -71,6 +71,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     logger.error('Erreur callback Dropbox:', err);
-    res.status(500).json({ error: 'Erreur interne lors du callback OAuth2' });
+    res.status(500).json({ error: 'Erreur interne lors du callback OAuth2', details: err.message });
   }
 }
