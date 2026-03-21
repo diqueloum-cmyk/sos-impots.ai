@@ -6,7 +6,7 @@ import { setCorsHeaders, handleCorsPreflight } from '../lib/utils.js';
 import { createDropboxFileRequest } from '../lib/dropbox.js';
 
 const NOTIFICATION_EMAIL = 'contact@sos-impots.ai';
-const FROM_EMAIL = 'onboarding@resend.dev';
+const FROM_EMAIL = 'contact@sos-impots.ai';
 
 async function sendEmail({ to, subject, html }) {
   const apiKey = process.env.RESEND_API_KEY;

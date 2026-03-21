@@ -6,7 +6,7 @@ import { createDropboxFileRequest } from '../lib/dropbox.js';
 import logger from '../lib/logger.js';
 
 const NOTIFICATION_EMAIL = 'contact@sos-impots.ai';
-const FROM_EMAIL = 'onboarding@resend.dev';
+const FROM_EMAIL = 'contact@sos-impots.ai';
 
 /**
  * Envoie un email via Resend
