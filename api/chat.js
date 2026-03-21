@@ -152,8 +152,8 @@ export default async function handler(req, res) {
     let tokensUsed = 0;
 
     if (cachedResponse) {
-      // Réponse trouvée dans le cache
-      answer = cachedResponse.answer;
+      // Réponse trouvée dans le cache — nettoyer les éventuelles annotations File Search
+      answer = stripFileSearchAnnotations(cachedResponse.answer);
       fromCache = true;
       logger.info('Réponse servie depuis le cache (hit count:', cachedResponse.hitCount, ')');
 
