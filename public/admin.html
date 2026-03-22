@@ -80,18 +80,22 @@
         <div id="contentStats" class="tab-content">
 
       <!-- Statistiques -->
-      <div class="grid md:grid-cols-3 gap-6 mb-8">
+      <div class="grid md:grid-cols-4 gap-6 mb-8">
         <div class="bg-blue-50 p-4 rounded-lg">
-          <h3 class="text-lg font-semibold text-blue-900">Total Utilisateurs</h3>
-          <p id="totalUsers" class="text-2xl font-bold text-blue-600">-</p>
+          <h3 class="text-lg font-semibold text-blue-900">Total Sessions</h3>
+          <p id="totalSessions" class="text-2xl font-bold text-blue-600">-</p>
         </div>
         <div class="bg-green-50 p-4 rounded-lg">
-          <h3 class="text-lg font-semibold text-green-900">Inscriptions Aujourd'hui</h3>
-          <p id="todayUsers" class="text-2xl font-bold text-green-600">-</p>
+          <h3 class="text-lg font-semibold text-green-900">Sessions Aujourd'hui</h3>
+          <p id="todaySessions" class="text-2xl font-bold text-green-600">-</p>
         </div>
         <div class="bg-purple-50 p-4 rounded-lg">
-          <h3 class="text-lg font-semibold text-purple-900">Dernier Utilisateur</h3>
-          <p id="lastUser" class="text-sm text-purple-600">-</p>
+          <h3 class="text-lg font-semibold text-purple-900">Total Messages</h3>
+          <p id="totalMessages" class="text-2xl font-bold text-purple-600">-</p>
+        </div>
+        <div class="bg-orange-50 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold text-orange-900">Sessions récentes</h3>
+          <p id="recentSessions" class="text-2xl font-bold text-orange-600">-</p>
         </div>
       </div>
 
@@ -100,17 +104,6 @@
         <button onclick="loadStats()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           Actualiser les données
         </button>
-        <button onclick="loadUsers()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ml-2">
-          Voir tous les utilisateurs
-        </button>
-      </div>
-
-      <!-- Liste des utilisateurs -->
-      <div class="mb-6">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Utilisateurs Inscrits</h2>
-        <div id="usersList" class="space-y-2">
-          <p class="text-gray-500">Cliquez sur "Voir tous les utilisateurs" pour charger la liste</p>
-        </div>
       </div>
 
       <!-- Messages d'erreur -->
@@ -124,14 +117,11 @@
           <!-- Sous-onglets -->
           <div class="mb-6">
             <div class="flex gap-4 mb-4">
-              <button id="viewByUser" class="sub-tab-button active px-4 py-2 bg-blue-600 text-white rounded">
-                Par utilisateur
-              </button>
-              <button id="viewAll" class="sub-tab-button px-4 py-2 bg-gray-300 text-gray-700 rounded">
+              <button id="viewAll" class="sub-tab-button active px-4 py-2 bg-blue-600 text-white rounded">
                 Toutes les conversations
               </button>
               <button id="viewAnonymous" class="sub-tab-button px-4 py-2 bg-gray-300 text-gray-700 rounded">
-                Utilisateurs anonymes
+                Conversations anonymes
               </button>
             </div>
 
@@ -143,25 +133,18 @@
                 <option value="30d">30 derniers jours</option>
               </select>
 
-              <select id="userFilter" class="border rounded px-4 py-2">
-                <option value="">Tous les utilisateurs</option>
-              </select>
-
               <button onclick="exportConversations()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                 Exporter CSV
+              </button>
+
+              <button onclick="cleanupOldSessions()" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+                Nettoyer (+30j)
               </button>
             </div>
           </div>
 
-          <!-- Vue Par Utilisateur -->
-          <div id="viewUserContent" class="view-content">
-            <div id="userConvList" class="grid grid-cols-1 gap-4">
-              <!-- Liste des utilisateurs avec nombre de conversations -->
-            </div>
-          </div>
-
           <!-- Vue Toutes les Conversations -->
-          <div id="viewAllContent" class="view-content hidden">
+          <div id="viewAllContent" class="view-content">
             <div id="conversationsList" class="space-y-4">
               <!-- Liste des conversations -->
             </div>
@@ -172,7 +155,7 @@
             </div>
           </div>
 
-          <!-- Vue Utilisateurs Anonymes -->
+          <!-- Vue Conversations Anonymes -->
           <div id="viewAnonymousContent" class="view-content hidden">
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-gray-200 bg-white shadow rounded-lg">
@@ -239,7 +222,6 @@
     document.addEventListener('DOMContentLoaded', function() {
       const savedKey = sessionStorage.getItem('adminKey');
       if (savedKey) {
-        // Vérifier si la clé est toujours valide
         adminKey = savedKey;
         testAdminKey(savedKey);
       }
@@ -250,14 +232,8 @@
       const testKey = document.getElementById('adminKeyInput').value;
 
       try {
-        // Tester la clé admin en appelant les stats
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Key': testKey
-          },
-          body: JSON.stringify({ action: 'stats', adminKey: testKey })
+        const response = await fetch('/api/admin-conversations?action=stats', {
+          headers: { 'X-Admin-Key': testKey }
         });
 
         const data = await response.json();
@@ -279,20 +255,14 @@
 
     async function testAdminKey(key) {
       try {
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Key': key
-          },
-          body: JSON.stringify({ action: 'stats', adminKey: key })
+        const response = await fetch('/api/admin-conversations?action=stats', {
+          headers: { 'X-Admin-Key': key }
         });
 
         if (response.ok) {
           showAdminContent();
           loadStats();
         } else {
-          // Clé invalide, afficher le modal
           sessionStorage.removeItem('adminKey');
           adminKey = null;
         }
@@ -319,122 +289,31 @@
       if (!adminKey) return;
 
       try {
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Key': adminKey
-          },
-          body: JSON.stringify({ action: 'stats', adminKey: adminKey })
+        const dateFilter = document.getElementById('dateFilter')?.value || '';
+        const url = `/api/admin-conversations?action=stats${dateFilter ? '&dateFilter=' + dateFilter : ''}`;
+
+        const response = await fetch(url, {
+          headers: { 'X-Admin-Key': adminKey }
         });
 
-        const data = await response.json();
-
         if (response.status === 403) {
-          // Session expirée, demander reconnexion
           logout();
           throw new Error('Session expirée. Veuillez vous reconnecter.');
         }
 
-        if (data.success) {
-          document.getElementById('totalUsers').textContent = data.stats.totalUsers;
-          document.getElementById('todayUsers').textContent = data.stats.todayUsers;
+        const data = await response.json();
 
-          if (data.stats.lastUser) {
-            document.getElementById('lastUser').textContent =
-              `${data.stats.lastUser.firstName} ${data.stats.lastUser.lastName} (${data.stats.lastUser.email})`;
-          } else {
-            document.getElementById('lastUser').textContent = 'Aucun utilisateur';
-          }
+        if (data.success) {
+          document.getElementById('totalSessions').textContent = data.stats.totalSessions;
+          document.getElementById('todaySessions').textContent = data.stats.todaySessions;
+          document.getElementById('totalMessages').textContent = data.stats.totalMessages;
+          document.getElementById('recentSessions').textContent = data.stats.recentSessions;
         } else {
           throw new Error(data.error || 'Erreur lors du chargement des statistiques');
         }
       } catch (error) {
         showError('Erreur: ' + error.message);
       }
-    }
-
-    async function loadUsers() {
-      if (!adminKey) return;
-
-      try {
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Key': adminKey
-          },
-          body: JSON.stringify({ action: 'list', adminKey: adminKey })
-        });
-
-        const data = await response.json();
-
-        if (response.status === 403) {
-          // Session expirée, demander reconnexion
-          logout();
-          throw new Error('Session expirée. Veuillez vous reconnecter.');
-        }
-
-        if (data.success) {
-          displayUsers(data.users);
-        } else {
-          throw new Error(data.error || 'Erreur lors du chargement des utilisateurs');
-        }
-      } catch (error) {
-        showError('Erreur: ' + error.message);
-      }
-    }
-
-    function displayUsers(users) {
-      const usersList = document.getElementById('usersList');
-
-      // Vider la liste
-      usersList.innerHTML = '';
-
-      if (users.length === 0) {
-        const emptyMsg = document.createElement('p');
-        emptyMsg.className = 'text-gray-500';
-        emptyMsg.textContent = 'Aucun utilisateur inscrit';
-        usersList.appendChild(emptyMsg);
-        return;
-      }
-
-      // Créer les éléments DOM de manière sûre (sans innerHTML)
-      users.forEach(user => {
-        const userDiv = document.createElement('div');
-        userDiv.className = 'bg-gray-50 p-4 rounded-lg border';
-
-        const flexDiv = document.createElement('div');
-        flexDiv.className = 'flex justify-between items-start';
-
-        const infoDiv = document.createElement('div');
-
-        const nameH4 = document.createElement('h4');
-        nameH4.className = 'font-semibold text-gray-800';
-        nameH4.textContent = `${user.firstName} ${user.lastName}`;
-
-        const emailP = document.createElement('p');
-        emailP.className = 'text-gray-600';
-        emailP.textContent = user.email;
-
-        const dateP = document.createElement('p');
-        dateP.className = 'text-sm text-gray-500';
-        dateP.textContent = `Inscrit le: ${new Date(user.registeredAt).toLocaleDateString('fr-FR')}`;
-
-        const idDiv = document.createElement('div');
-        idDiv.className = 'text-sm text-gray-500';
-        idDiv.textContent = `ID: ${user.id}`;
-
-        infoDiv.appendChild(nameH4);
-        infoDiv.appendChild(emailP);
-        infoDiv.appendChild(dateP);
-
-        flexDiv.appendChild(infoDiv);
-        flexDiv.appendChild(idDiv);
-
-        userDiv.appendChild(flexDiv);
-        usersList.appendChild(userDiv);
-      });
     }
 
     function showError(message) {
@@ -453,7 +332,6 @@
 
     let currentPage = 1;
     let currentDateFilter = '';
-    let currentUserFilter = '';
     let currentSessionId = null;
     let currentAnonymousPage = 1;
 
@@ -464,18 +342,16 @@
 
     document.getElementById('tabConversations').addEventListener('click', () => {
       switchTab('Conversations');
-      loadConversations();
+      loadAllConversations();
     });
 
     function switchTab(tab) {
-      // Désactiver tous les onglets
       document.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.remove('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
         btn.classList.add('text-gray-600');
       });
       document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
 
-      // Activer l'onglet sélectionné
       const selectedTab = document.getElementById(`tab${tab}`);
       selectedTab.classList.add('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
       selectedTab.classList.remove('text-gray-600');
@@ -483,11 +359,6 @@
     }
 
     // Gestion des sous-onglets
-    document.getElementById('viewByUser').addEventListener('click', () => {
-      switchView('User');
-      loadUserConversations();
-    });
-
     document.getElementById('viewAll').addEventListener('click', () => {
       switchView('All');
       loadAllConversations();
@@ -499,21 +370,14 @@
     });
 
     function switchView(view) {
-      // Désactiver tous les sous-onglets (remettre en gris)
       document.querySelectorAll('.sub-tab-button').forEach(btn => {
         btn.classList.remove('active', 'bg-blue-600', 'text-white');
         btn.classList.add('bg-gray-300', 'text-gray-700');
       });
 
-      // Cacher tout le contenu
       document.querySelectorAll('.view-content').forEach(content => content.classList.add('hidden'));
 
-      if (view === 'User') {
-        const btn = document.getElementById('viewByUser');
-        btn.classList.add('active', 'bg-blue-600', 'text-white');
-        btn.classList.remove('bg-gray-300', 'text-gray-700');
-        document.getElementById('viewUserContent').classList.remove('hidden');
-      } else if (view === 'All') {
+      if (view === 'All') {
         const btn = document.getElementById('viewAll');
         btn.classList.add('active', 'bg-blue-600', 'text-white');
         btn.classList.remove('bg-gray-300', 'text-gray-700');
@@ -526,114 +390,13 @@
       }
     }
 
-    // Charger les conversations
-    async function loadConversations() {
-      await loadUserFilter();
-      await loadUserConversations();
-    }
-
-    async function loadUserFilter() {
-      if (!adminKey) return;
-
-      try {
-        const response = await fetch('/api/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Key': adminKey
-          },
-          body: JSON.stringify({ action: 'list', adminKey })
-        });
-
-        const data = await response.json();
-        const select = document.getElementById('userFilter');
-        select.innerHTML = '<option value="">Tous les utilisateurs</option>';
-
-        if (data.users) {
-          data.users.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.id;
-            option.textContent = `${user.firstName} ${user.lastName} (${user.email})`;
-            select.appendChild(option);
-          });
-        }
-      } catch (error) {
-        showError('Erreur lors du chargement des utilisateurs: ' + error.message);
-      }
-    }
-
-    async function loadUserConversations() {
-      if (!adminKey) return;
-
-      try {
-        // Récupérer tous les utilisateurs
-        const usersResponse = await fetch('/api/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Key': adminKey
-          },
-          body: JSON.stringify({ action: 'list', adminKey })
-        });
-        const usersData = await usersResponse.json();
-
-        const userList = document.getElementById('userConvList');
-        userList.innerHTML = '';
-
-        if (!usersData.users || usersData.users.length === 0) {
-          userList.innerHTML = '<p class="text-gray-500">Aucun utilisateur inscrit</p>';
-          return;
-        }
-
-        // Pour chaque utilisateur, récupérer le nombre de conversations
-        for (const user of usersData.users) {
-          const response = await fetch(`/api/admin-conversations?action=list&userId=${user.id}&limit=999`, {
-            headers: { 'X-Admin-Key': adminKey }
-          });
-          const data = await response.json();
-
-          const userCard = document.createElement('div');
-          userCard.className = 'bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition';
-          userCard.onclick = () => showUserConversations(user.id);
-
-          const nameH3 = document.createElement('h3');
-          nameH3.className = 'font-bold text-lg';
-          nameH3.textContent = `${user.firstName} ${user.lastName}`;
-
-          const emailP = document.createElement('p');
-          emailP.className = 'text-gray-600';
-          emailP.textContent = user.email;
-
-          const convP = document.createElement('p');
-          convP.className = 'text-blue-600 mt-2';
-          convP.textContent = `${data.total || 0} conversation(s)`;
-
-          userCard.appendChild(nameH3);
-          userCard.appendChild(emailP);
-          userCard.appendChild(convP);
-          userList.appendChild(userCard);
-        }
-      } catch (error) {
-        showError('Erreur lors du chargement des conversations: ' + error.message);
-      }
-    }
-
-    function showUserConversations(userId) {
-      currentUserFilter = userId;
-      document.getElementById('userFilter').value = userId;
-      switchView('All');
-      loadAllConversations();
-    }
-
     async function loadAllConversations() {
       if (!adminKey) return;
 
       currentDateFilter = document.getElementById('dateFilter').value;
-      currentUserFilter = document.getElementById('userFilter').value;
 
       let url = `/api/admin-conversations?action=list&page=${currentPage}&limit=50`;
       if (currentDateFilter) url += `&dateFilter=${currentDateFilter}`;
-      if (currentUserFilter) url += `&userId=${currentUserFilter}`;
 
       try {
         const response = await fetch(url, {
@@ -645,7 +408,10 @@
         list.innerHTML = '';
 
         if (!data.sessions || data.sessions.length === 0) {
-          list.innerHTML = '<p class="text-gray-500">Aucune conversation trouvée</p>';
+          const emptyP = document.createElement('p');
+          emptyP.className = 'text-gray-500';
+          emptyP.textContent = 'Aucune conversation trouvée';
+          list.appendChild(emptyP);
           return;
         }
 
@@ -664,16 +430,19 @@
           titleH3.className = 'font-bold text-lg text-blue-900';
           titleH3.textContent = session.title;
 
-          const userP = document.createElement('p');
-          userP.className = 'text-gray-600 text-sm';
-          userP.textContent = `${session.user_name} (${session.user_email})`;
+          const idP = document.createElement('p');
+          idP.className = 'text-gray-600 text-sm';
+          const idShort = session.anonymous_identifier
+            ? session.anonymous_identifier.substring(0, 8) + '...'
+            : 'Session #' + session.id;
+          idP.textContent = idShort;
 
           const dateP = document.createElement('p');
           dateP.className = 'text-gray-500 text-sm mt-2';
           dateP.textContent = `${new Date(session.started_at).toLocaleDateString('fr-FR')} - ${session.message_count} message(s)`;
 
           contentDiv.appendChild(titleH3);
-          contentDiv.appendChild(userP);
+          contentDiv.appendChild(idP);
           contentDiv.appendChild(dateP);
           flexDiv.appendChild(contentDiv);
           card.appendChild(flexDiv);
@@ -692,10 +461,9 @@
 
       if (totalPages <= 1) return;
 
-      // Bouton précédent
       if (page > 1) {
         const prev = document.createElement('button');
-        prev.textContent = '← Précédent';
+        prev.textContent = '\u2190 Pr\u00e9c\u00e9dent';
         prev.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
         prev.onclick = () => {
           currentPage--;
@@ -704,7 +472,6 @@
         pagination.appendChild(prev);
       }
 
-      // Numéros de pages
       for (let i = 1; i <= totalPages; i++) {
         if (i === page || i === 1 || i === totalPages || Math.abs(i - page) <= 2) {
           const pageBtn = document.createElement('button');
@@ -725,10 +492,9 @@
         }
       }
 
-      // Bouton suivant
       if (page < totalPages) {
         const next = document.createElement('button');
-        next.textContent = 'Suivant →';
+        next.textContent = 'Suivant \u2192';
         next.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
         next.onclick = () => {
           currentPage++;
@@ -754,7 +520,10 @@
         content.innerHTML = '';
 
         if (!data.messages || data.messages.length === 0) {
-          content.innerHTML = '<p class="text-gray-500">Aucun message dans cette conversation</p>';
+          const emptyP = document.createElement('p');
+          emptyP.className = 'text-gray-500';
+          emptyP.textContent = 'Aucun message dans cette conversation';
+          content.appendChild(emptyP);
         } else {
           data.messages.forEach(msg => {
             const msgDiv = document.createElement('div');
@@ -764,10 +533,10 @@
 
             const roleDiv = document.createElement('div');
             roleDiv.className = `font-bold text-sm mb-2 ${msg.role === 'user' ? 'text-blue-900' : 'text-gray-700'}`;
-            roleDiv.textContent = msg.role === 'user' ? 'Question' : 'Réponse';
+            roleDiv.textContent = msg.role === 'user' ? 'Question' : 'R\u00e9ponse';
 
             const contentDiv = document.createElement('div');
-            contentDiv.className = 'text-gray-800';
+            contentDiv.className = 'text-gray-800 whitespace-pre-line';
             contentDiv.textContent = msg.content;
 
             const dateDiv = document.createElement('div');
@@ -795,7 +564,7 @@
     async function deleteConversation() {
       if (!currentSessionId || !adminKey) return;
 
-      if (!confirm('Êtes-vous sûr de vouloir supprimer cette conversation ?')) return;
+      if (!confirm('\u00cates-vous s\u00fbr de vouloir supprimer cette conversation ?')) return;
 
       try {
         await fetch(`/api/admin-conversations?sessionId=${currentSessionId}`, {
@@ -814,7 +583,47 @@
       if (!adminKey) return;
 
       const dateFilter = document.getElementById('dateFilter').value;
-      window.location.href = `/api/admin-conversations?action=export&dateFilter=${dateFilter}&adminKey=${adminKey}`;
+      // Passer la clé admin dans le header via un lien temporaire
+      try {
+        const response = await fetch(`/api/admin-conversations?action=export&dateFilter=${dateFilter}`, {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur export');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `conversations-${dateFilter || 'all'}-${Date.now()}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        showError('Erreur export: ' + error.message);
+      }
+    }
+
+    async function cleanupOldSessions() {
+      if (!adminKey) return;
+      if (!confirm('Supprimer les sessions anonymes de plus de 30 jours ?')) return;
+
+      try {
+        const response = await fetch('/api/admin-conversations?action=cleanup', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          alert(`${data.deleted} session(s) supprim\u00e9e(s)`);
+          loadAllConversations();
+        } else {
+          showError('Erreur: ' + data.error);
+        }
+      } catch (error) {
+        showError('Erreur nettoyage: ' + error.message);
+      }
     }
 
     // Event listeners pour les filtres
@@ -823,18 +632,10 @@
       loadAllConversations();
     });
 
-    document.getElementById('userFilter').addEventListener('change', () => {
-      currentPage = 1;
-      loadAllConversations();
-    });
-
     // ====================================
     // GESTION DES CONVERSATIONS ANONYMES
     // ====================================
 
-    /**
-     * Charger les conversations anonymes avec pagination
-     */
     async function loadAnonymousConversations(page = 1) {
       if (!adminKey) return;
 
@@ -845,9 +646,7 @@
         const response = await fetch(
           `/api/admin-conversations?action=listAnonymous&page=${page}&limit=50&dateFilter=${dateFilter}`,
           {
-            headers: {
-              'X-Admin-Key': adminKey
-            }
+            headers: { 'X-Admin-Key': adminKey }
           }
         );
 
@@ -865,9 +664,6 @@
       }
     }
 
-    /**
-     * Parser le User-Agent pour extraire le navigateur
-     */
     function parseUserAgent(ua) {
       if (!ua || ua === 'Unknown') return 'Inconnu';
 
@@ -880,132 +676,143 @@
       return 'Autre';
     }
 
-    /**
-     * Masquer l'adresse IP (RGPD)
-     */
     function maskIP(ip) {
       if (!ip) return 'N/A';
       const parts = ip.split('.');
       if (parts.length === 4) {
-        // Masquer le dernier octet : xxx.xxx.xxx.***
         return `${parts[0]}.${parts[1]}.${parts[2]}.***`;
       }
-      // IPv6 ou autre format
       return ip.substring(0, 15) + '...';
     }
 
-    /**
-     * Afficher les conversations anonymes dans le tableau
-     */
     function renderAnonymousConversations(conversations) {
       const tbody = document.getElementById('anonymousConversationsList');
+      tbody.innerHTML = '';
 
       if (!conversations || conversations.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-              Aucune conversation anonyme trouvée
-            </td>
-          </tr>
-        `;
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.className = 'px-6 py-4 text-center text-gray-500';
+        td.textContent = 'Aucune conversation anonyme trouvée';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
         return;
       }
 
-      tbody.innerHTML = conversations.map(conv => {
-        const anonymousIdShort = conv.anonymous_identifier
+      conversations.forEach(conv => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50';
+
+        const idTd = document.createElement('td');
+        idTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+        idTd.textContent = conv.id;
+
+        const anonTd = document.createElement('td');
+        anonTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono';
+        anonTd.textContent = conv.anonymous_identifier
           ? conv.anonymous_identifier.substring(0, 8) + '...'
           : 'N/A';
-        const ipMasked = maskIP(conv.ip_address);
-        const browser = parseUserAgent(conv.user_agent);
+
+        const ipTd = document.createElement('td');
+        ipTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600';
+        ipTd.textContent = maskIP(conv.ip_address);
+
+        const browserTd = document.createElement('td');
+        browserTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600';
+        browserTd.textContent = parseUserAgent(conv.user_agent);
+
+        const titleTd = document.createElement('td');
+        titleTd.className = 'px-6 py-4 text-sm text-gray-900 max-w-xs truncate';
+        titleTd.textContent = conv.title || 'Sans titre';
+
+        const msgTd = document.createElement('td');
+        msgTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600';
+        msgTd.textContent = conv.message_count;
+
+        const dateTd = document.createElement('td');
+        dateTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600';
         const date = new Date(conv.started_at).toLocaleDateString('fr-FR');
-        const time = new Date(conv.started_at).toLocaleTimeString('fr-FR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+        const time = new Date(conv.started_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        dateTd.textContent = `${date} ${time}`;
 
-        // Échapper le titre pour éviter les problèmes JS
-        const escapedTitle = (conv.title || 'Sans titre')
-          .replace(/'/g, "\\'")
-          .replace(/"/g, '&quot;');
+        const actionsTd = document.createElement('td');
+        actionsTd.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium';
 
-        return `
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${conv.id}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">${anonymousIdShort}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${ipMasked}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${browser}</td>
-            <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">${conv.title || 'Sans titre'}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${conv.message_count}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${date} ${time}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <button onclick="showConversation(${conv.id}, '${escapedTitle}')"
-                      class="text-blue-600 hover:text-blue-900 mr-3">
-                Voir
-              </button>
-              <button onclick="deleteAnonymousConversation(${conv.id})"
-                      class="text-red-600 hover:text-red-900">
-                Supprimer
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+        const viewBtn = document.createElement('button');
+        viewBtn.className = 'text-blue-600 hover:text-blue-900 mr-3';
+        viewBtn.textContent = 'Voir';
+        viewBtn.onclick = () => showConversation(conv.id, conv.title || 'Sans titre');
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'text-red-600 hover:text-red-900';
+        deleteBtn.textContent = 'Supprimer';
+        deleteBtn.onclick = () => deleteAnonymousConversation(conv.id);
+
+        actionsTd.appendChild(viewBtn);
+        actionsTd.appendChild(deleteBtn);
+
+        tr.appendChild(idTd);
+        tr.appendChild(anonTd);
+        tr.appendChild(ipTd);
+        tr.appendChild(browserTd);
+        tr.appendChild(titleTd);
+        tr.appendChild(msgTd);
+        tr.appendChild(dateTd);
+        tr.appendChild(actionsTd);
+
+        tbody.appendChild(tr);
+      });
     }
 
-    /**
-     * Afficher la pagination pour les conversations anonymes
-     */
     function renderAnonymousPagination(pagination) {
       const container = document.getElementById('anonymousPagination');
+      container.innerHTML = '';
 
-      if (pagination.totalPages <= 1) {
-        container.innerHTML = '';
-        return;
-      }
+      if (pagination.totalPages <= 1) return;
 
       const { page, totalPages } = pagination;
-      let html = '';
 
-      // Bouton précédent
       if (page > 1) {
-        html += `<button onclick="loadAnonymousConversations(${page - 1})"
-                         class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                   ← Précédent
-                 </button>`;
+        const prev = document.createElement('button');
+        prev.textContent = '\u2190 Pr\u00e9c\u00e9dent';
+        prev.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+        prev.onclick = () => loadAnonymousConversations(page - 1);
+        container.appendChild(prev);
       }
 
-      // Numéros de page
       for (let i = 1; i <= totalPages; i++) {
-        if (i === page) {
-          html += `<button class="px-4 py-2 bg-blue-900 text-white rounded">${i}</button>`;
-        } else if (i === 1 || i === totalPages || Math.abs(i - page) <= 2) {
-          html += `<button onclick="loadAnonymousConversations(${i})"
-                           class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                     ${i}
-                   </button>`;
+        if (i === page || i === 1 || i === totalPages || Math.abs(i - page) <= 2) {
+          const btn = document.createElement('button');
+          btn.textContent = i;
+          btn.className = i === page
+            ? 'px-4 py-2 bg-blue-900 text-white rounded'
+            : 'px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400';
+          if (i !== page) {
+            btn.onclick = () => loadAnonymousConversations(i);
+          }
+          container.appendChild(btn);
         } else if (Math.abs(i - page) === 3) {
-          html += `<span class="px-2">...</span>`;
+          const dots = document.createElement('span');
+          dots.textContent = '...';
+          dots.className = 'px-2';
+          container.appendChild(dots);
         }
       }
 
-      // Bouton suivant
       if (page < totalPages) {
-        html += `<button onclick="loadAnonymousConversations(${page + 1})"
-                         class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                   Suivant →
-                 </button>`;
+        const next = document.createElement('button');
+        next.textContent = 'Suivant \u2192';
+        next.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+        next.onclick = () => loadAnonymousConversations(page + 1);
+        container.appendChild(next);
       }
-
-      container.innerHTML = html;
     }
 
-    /**
-     * Supprimer une conversation anonyme
-     */
     async function deleteAnonymousConversation(sessionId) {
       if (!adminKey) return;
 
-      if (!confirm('Êtes-vous sûr de vouloir supprimer cette conversation anonyme ?')) {
+      if (!confirm('\u00cates-vous s\u00fbr de vouloir supprimer cette conversation anonyme ?')) {
         return;
       }
 
@@ -1018,7 +825,6 @@
         const data = await response.json();
 
         if (data.success) {
-          // Recharger la liste à la page actuelle
           loadAnonymousConversations(currentAnonymousPage);
         } else {
           showError('Erreur lors de la suppression: ' + data.error);

@@ -144,7 +144,9 @@ export default async function handler(req, res) {
           conversation_sessions: {
             columns: [
               'id (SERIAL PRIMARY KEY)',
-              'user_id (INTEGER)',
+              'anonymous_identifier (VARCHAR 255)',
+              'ip_address (VARCHAR 45)',
+              'is_anonymous (BOOLEAN)',
               'title (VARCHAR 255)',
               'started_at (TIMESTAMP)',
               'last_message_at (TIMESTAMP)',
@@ -152,7 +154,8 @@ export default async function handler(req, res) {
               'openai_thread_id (TEXT)'
             ],
             indexes: [
-              'idx_session_user'
+              'idx_anonymous_sessions',
+              'idx_anonymous_identifier'
             ]
           },
           conversation_messages: {
