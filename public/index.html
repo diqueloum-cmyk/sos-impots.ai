@@ -918,7 +918,11 @@
 
             offres.forEach(offre => {
               const isRecommande = offre.id === offreChoisie;
-              const lien = STRIPE_LINKS[offre.id];
+              // Ajouter client_reference_id pour lier le paiement à la conversation
+              const baseUrl = STRIPE_LINKS[offre.id];
+              const lien = currentSessionId
+                ? baseUrl + '?client_reference_id=' + encodeURIComponent(currentSessionId)
+                : baseUrl;
 
               const btn = document.createElement('a');
               btn.href = lien;

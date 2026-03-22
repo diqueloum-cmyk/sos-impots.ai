@@ -1,7 +1,7 @@
 // Webhook Stripe — reçoit les événements de paiement
 // Stripe envoie une signature dans le header stripe-signature pour vérifier l'authenticité
 
-import { updateOrderByCheckoutId } from '../lib/db.js';
+import { createOrder, updateOrderByCheckoutId } from '../lib/db.js';
 import { createDropboxFileRequest } from '../lib/dropbox.js';
 import logger from '../lib/logger.js';
 
@@ -221,12 +221,6 @@ export default async function handler(req, res) {
         // session.payment_intent = pi_xxx
         // session.payment_status = 'paid'
         if (session.payment_status === 'paid') {
-          await updateOrderByCheckoutId(session.id, {
-            paymentStatus: 'paid',
-            stripePaymentIntentId: session.payment_intent || null
-          });
-          logger.info('Paiement confirmé pour session:', session.id);
-
           // Récupérer les infos client depuis la session Stripe
           const clientEmail = session.customer_details?.email || session.customer_email || null;
           const clientName = session.customer_details?.name || null;
@@ -238,14 +232,37 @@ export default async function handler(req, res) {
             offerType = amountTotal >= 9900 ? 'premium_99' : 'express_39';
           }
 
-          // Récupérer le sessionId chat depuis les métadonnées Stripe
-          const chatSessionId = session.metadata?.chat_session_id || session.client_reference_id || null;
+          // Récupérer le sessionId chat depuis client_reference_id (passé dans l'URL du Payment Link)
+          const chatSessionId = session.client_reference_id || null;
+
+          // Créer la commande en base (INSERT, pas UPDATE)
+          try {
+            await createOrder({
+              sessionId: chatSessionId ? parseInt(chatSessionId) : null,
+              userEmail: clientEmail || `unknown-${session.id}@stripe`,
+              offerType: offerType || 'express_39',
+              stripeCheckoutId: session.id,
+              stripePaymentIntentId: session.payment_intent || null,
+              paymentStatus: 'paid',
+              amountCents: amountTotal
+            });
+          } catch (orderError) {
+            logger.error('Erreur création commande:', orderError);
+            // Continuer quand même pour envoyer les emails
+          }
+
+          logger.info('Paiement confirmé pour session:', session.id);
+
+          // Créer le File Request Dropbox
+          let dropbox = null;
+          try {
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            dropbox = await createDropboxFileRequest({ clientName, date });
+          } catch (dropboxError) {
+            logger.error('Erreur création Dropbox File Request:', dropboxError);
+          }
 
           if (clientEmail) {
-            // Créer le File Request Dropbox
-            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            const dropbox = await createDropboxFileRequest({ clientName, date });
-
             // Envoi en parallèle : email client + notification interne
             await Promise.all([
               sendConfirmationToClient({
@@ -267,7 +284,18 @@ export default async function handler(req, res) {
               })
             ]);
           } else {
+            // Pas d'email client — envoyer quand même la notification interne
             logger.warn('Pas d\'email client dans la session Stripe:', session.id);
+            await sendInternalNotification({
+              email: '(email non fourni)',
+              name: clientName,
+              offerType,
+              amount: amountTotal,
+              sessionId: chatSessionId,
+              checkoutId: session.id,
+              dropboxUrl: dropbox?.url || null,
+              dropboxPassword: dropbox?.password || null
+            });
           }
         }
         break;
