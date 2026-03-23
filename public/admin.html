@@ -7,26 +7,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'system-ui', sans-serif; }
-    .tab-button {
-      transition: color 0.3s ease, border-color 0.3s ease;
-    }
-    .tab-button.active {
-      color: #1e3a8a;
-      border-bottom-color: #1e3a8a;
-    }
-    .tab-content.hidden {
-      display: none;
-    }
-    .sub-tab-button {
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
-    .sub-tab-button.active {
-      background-color: #2563eb;
-      color: white;
-    }
-    .view-content.hidden {
-      display: none;
-    }
+    .tab-button { transition: color 0.3s ease, border-color 0.3s ease; }
+    .tab-button.active { color: #1e3a8a; border-bottom-color: #1e3a8a; }
+    .tab-content.hidden { display: none; }
+    .sub-tab-button { transition: background-color 0.3s ease, color 0.3s ease; }
+    .sub-tab-button.active { background-color: #2563eb; color: white; }
+    .view-content.hidden { display: none; }
+    .stat-card { transition: transform 0.15s; }
+    .stat-card:hover { transform: translateY(-2px); }
   </style>
 </head>
 <body class="bg-gray-100">
@@ -35,7 +23,7 @@
   <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
       <h2 class="text-2xl font-bold text-blue-900 mb-6">Authentification Admin</h2>
-      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+      <form id="loginForm" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Clé Admin</label>
           <input
@@ -53,68 +41,120 @@
     </div>
   </div>
 
-  <!-- Contenu admin (caché par défaut) -->
+  <!-- Contenu admin -->
   <div id="adminContent" class="hidden">
     <div class="container mx-auto px-4 py-8">
       <div class="bg-white rounded-lg shadow-lg p-6">
+
+        <!-- Header -->
         <div class="flex justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold text-blue-900">Administration - sos-impots.ai</h1>
-          <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-            Déconnexion
-          </button>
+          <h1 class="text-3xl font-bold text-blue-900">Administration</h1>
+          <div class="flex items-center gap-4">
+            <span id="lastRefresh" class="text-sm text-gray-400"></span>
+            <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+              Déconnexion
+            </button>
+          </div>
         </div>
 
         <!-- Onglets -->
         <div class="mb-8">
           <div class="flex border-b border-gray-300">
-            <button id="tabStats" class="tab-button active px-6 py-3 font-semibold text-blue-900 border-b-2 border-blue-900">
-              Statistiques
+            <button id="tabDashboard" class="tab-button active px-6 py-3 font-semibold text-blue-900 border-b-2 border-blue-900">
+              Tableau de bord
             </button>
             <button id="tabConversations" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-blue-900">
               Conversations
             </button>
+            <button id="tabMaintenance" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-blue-900">
+              Maintenance
+            </button>
           </div>
         </div>
 
-        <!-- Contenu Onglet Statistiques -->
-        <div id="contentStats" class="tab-content">
+        <!-- ============================================ -->
+        <!-- ONGLET TABLEAU DE BORD                       -->
+        <!-- ============================================ -->
+        <div id="contentDashboard" class="tab-content">
 
-      <!-- Statistiques -->
-      <div class="grid md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-blue-50 p-4 rounded-lg">
-          <h3 class="text-lg font-semibold text-blue-900">Total Sessions</h3>
-          <p id="totalSessions" class="text-2xl font-bold text-blue-600">-</p>
-        </div>
-        <div class="bg-green-50 p-4 rounded-lg">
-          <h3 class="text-lg font-semibold text-green-900">Sessions Aujourd'hui</h3>
-          <p id="todaySessions" class="text-2xl font-bold text-green-600">-</p>
-        </div>
-        <div class="bg-purple-50 p-4 rounded-lg">
-          <h3 class="text-lg font-semibold text-purple-900">Total Messages</h3>
-          <p id="totalMessages" class="text-2xl font-bold text-purple-600">-</p>
-        </div>
-        <div class="bg-orange-50 p-4 rounded-lg">
-          <h3 class="text-lg font-semibold text-orange-900">Sessions récentes</h3>
-          <p id="recentSessions" class="text-2xl font-bold text-orange-600">-</p>
-        </div>
-      </div>
+          <!-- Ligne 1 : Conversations -->
+          <h2 class="text-lg font-semibold text-gray-700 mb-3">Conversations</h2>
+          <div class="grid md:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <p class="text-sm text-blue-700 font-medium">Total sessions</p>
+              <p id="statTotalSessions" class="text-3xl font-bold text-blue-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-green-50 p-4 rounded-lg border border-green-100">
+              <p class="text-sm text-green-700 font-medium">Aujourd'hui</p>
+              <p id="statTodaySessions" class="text-3xl font-bold text-green-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-purple-50 p-4 rounded-lg border border-purple-100">
+              <p class="text-sm text-purple-700 font-medium">Total messages</p>
+              <p id="statTotalMessages" class="text-3xl font-bold text-purple-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-orange-50 p-4 rounded-lg border border-orange-100">
+              <p class="text-sm text-orange-700 font-medium">7 derniers jours</p>
+              <p id="statRecentSessions" class="text-3xl font-bold text-orange-900 mt-1">-</p>
+            </div>
+          </div>
 
-      <!-- Bouton de rafraîchissement -->
-      <div class="mb-6">
-        <button onclick="loadStats()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          Actualiser les données
-        </button>
-      </div>
+          <!-- Ligne 2 : Cache -->
+          <h2 class="text-lg font-semibold text-gray-700 mb-3">Cache IA</h2>
+          <div class="grid md:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card bg-cyan-50 p-4 rounded-lg border border-cyan-100">
+              <p class="text-sm text-cyan-700 font-medium">Questions en cache</p>
+              <p id="statCacheTotal" class="text-3xl font-bold text-cyan-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-teal-50 p-4 rounded-lg border border-teal-100">
+              <p class="text-sm text-teal-700 font-medium">Hits totaux</p>
+              <p id="statCacheHits" class="text-3xl font-bold text-teal-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+              <p class="text-sm text-emerald-700 font-medium">Top question (hits)</p>
+              <p id="statCacheTopHits" class="text-3xl font-bold text-emerald-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-lime-50 p-4 rounded-lg border border-lime-100">
+              <p class="text-sm text-lime-700 font-medium">Expirées</p>
+              <p id="statCacheExpired" class="text-3xl font-bold text-lime-900 mt-1">-</p>
+            </div>
+          </div>
 
-      <!-- Messages d'erreur -->
-      <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"></div>
+          <!-- Ligne 3 : Commandes / Revenus -->
+          <h2 class="text-lg font-semibold text-gray-700 mb-3">Commandes</h2>
+          <div class="grid md:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+              <p class="text-sm text-yellow-700 font-medium">Commandes payées</p>
+              <p id="statOrdersPaid" class="text-3xl font-bold text-yellow-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-amber-50 p-4 rounded-lg border border-amber-100">
+              <p class="text-sm text-amber-700 font-medium">Revenus total</p>
+              <p id="statRevenue" class="text-3xl font-bold text-amber-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-red-50 p-4 rounded-lg border border-red-100">
+              <p class="text-sm text-red-700 font-medium">Express (39 €)</p>
+              <p id="statOrdersExpress" class="text-3xl font-bold text-red-900 mt-1">-</p>
+            </div>
+            <div class="stat-card bg-pink-50 p-4 rounded-lg border border-pink-100">
+              <p class="text-sm text-pink-700 font-medium">Premium (99 €)</p>
+              <p id="statOrdersPremium" class="text-3xl font-bold text-pink-900 mt-1">-</p>
+            </div>
+          </div>
 
+          <!-- Bouton refresh -->
+          <div class="flex gap-4">
+            <button id="refreshStatsBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              Actualiser
+            </button>
+          </div>
+
+          <!-- Messages d'erreur -->
+          <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4"></div>
         </div>
-        <!-- Fin Contenu Onglet Statistiques -->
 
-        <!-- Contenu Onglet Conversations -->
+        <!-- ============================================ -->
+        <!-- ONGLET CONVERSATIONS                         -->
+        <!-- ============================================ -->
         <div id="contentConversations" class="tab-content hidden">
-          <!-- Sous-onglets -->
           <div class="mb-6">
             <div class="flex gap-4 mb-4">
               <button id="viewAll" class="sub-tab-button active px-4 py-2 bg-blue-600 text-white rounded">
@@ -125,19 +165,16 @@
               </button>
             </div>
 
-            <!-- Filtres -->
             <div class="flex gap-4 mb-6">
               <select id="dateFilter" class="border rounded px-4 py-2">
                 <option value="">Toutes les dates</option>
                 <option value="7d">7 derniers jours</option>
                 <option value="30d">30 derniers jours</option>
               </select>
-
-              <button onclick="exportConversations()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+              <button id="exportBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                 Exporter CSV
               </button>
-
-              <button onclick="cleanupOldSessions()" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+              <button id="cleanupBtn" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
                 Nettoyer (+30j)
               </button>
             </div>
@@ -145,14 +182,8 @@
 
           <!-- Vue Toutes les Conversations -->
           <div id="viewAllContent" class="view-content">
-            <div id="conversationsList" class="space-y-4">
-              <!-- Liste des conversations -->
-            </div>
-
-            <!-- Pagination -->
-            <div id="pagination" class="flex justify-center gap-2 mt-6">
-              <!-- Boutons de pagination -->
-            </div>
+            <div id="conversationsList" class="space-y-4"></div>
+            <div id="pagination" class="flex justify-center gap-2 mt-6"></div>
           </div>
 
           <!-- Vue Conversations Anonymes -->
@@ -161,26 +192,20 @@
               <table class="min-w-full divide-y divide-gray-200 bg-white shadow rounded-lg">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifiant</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Navigateur</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Messages</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Identifiant</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Navigateur</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titre</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Messages</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="anonymousConversationsList" class="bg-white divide-y divide-gray-200">
-                  <!-- Les conversations seront insérées ici dynamiquement -->
-                </tbody>
+                <tbody id="anonymousConversationsList" class="bg-white divide-y divide-gray-200"></tbody>
               </table>
             </div>
-
-            <!-- Pagination -->
-            <div id="anonymousPagination" class="mt-4 flex justify-center gap-2">
-              <!-- Boutons de pagination seront insérés ici -->
-            </div>
+            <div id="anonymousPagination" class="mt-4 flex justify-center gap-2"></div>
           </div>
 
           <!-- Modal Détail Conversation -->
@@ -189,27 +214,80 @@
               <div class="bg-white rounded-lg max-w-4xl w-full my-auto p-8">
                 <div class="flex justify-between items-center mb-6">
                   <h2 id="modalTitle" class="text-2xl font-bold text-blue-900"></h2>
-                  <button onclick="closeConversationModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                  <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
                 </div>
-
-                <div id="modalContent" class="space-y-4 max-h-96 overflow-y-auto">
-                  <!-- Messages Q&A -->
-                </div>
-
+                <div id="modalContent" class="space-y-4 max-h-96 overflow-y-auto"></div>
                 <div class="mt-6 flex gap-4">
-                  <button onclick="deleteConversation()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                  <button id="deleteConvBtn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
                     Supprimer
                   </button>
-                  <button onclick="closeConversationModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                  <button id="closeModalBtn2" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
                     Fermer
                   </button>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ONGLET MAINTENANCE                           -->
+        <!-- ============================================ -->
+        <div id="contentMaintenance" class="tab-content hidden">
+
+          <!-- Status actuel -->
+          <div id="maintenanceBanner" class="mb-6 p-4 rounded-lg border-2">
+            <!-- Rempli dynamiquement -->
+          </div>
+
+          <!-- Toggle maintenance -->
+          <div class="bg-white border rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Mode maintenance</h2>
+            <p class="text-gray-600 mb-4">
+              Quand le mode maintenance est activé, le site affiche une page de maintenance à tous les visiteurs.
+              Seul l'accès admin reste disponible. Un mot de passe permet de contourner la maintenance.
+            </p>
+
+            <div class="flex items-center gap-6">
+              <button id="toggleMaintenanceBtn" class="px-6 py-3 rounded-lg font-semibold text-white transition-colors">
+                <!-- Texte dynamique -->
+              </button>
+            </div>
+          </div>
+
+          <!-- Mot de passe bypass -->
+          <div class="bg-white border rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Mot de passe de contournement</h2>
+            <p class="text-gray-600 mb-4">
+              Ce mot de passe permet d'accéder au site même en mode maintenance.
+              Ajoutez <code class="bg-gray-100 px-2 py-1 rounded">?bypass=MOTDEPASSE</code> à l'URL du site.
+            </p>
+            <div class="flex gap-4">
+              <input
+                type="text"
+                id="bypassPasswordInput"
+                placeholder="Mot de passe actuel"
+                class="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-md">
+              <button id="saveBypassBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                Sauvegarder
+              </button>
+            </div>
+          </div>
+
+          <!-- Message de maintenance personnalisé -->
+          <div class="bg-white border rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Message affiché</h2>
+            <textarea
+              id="maintenanceMessageInput"
+              rows="3"
+              placeholder="Notre site est en cours de maintenance. Nous revenons très vite !"
+              class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            <button id="saveMessageBtn" class="mt-3 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+              Sauvegarder le message
+            </button>
+          </div>
 
         </div>
-        <!-- Fin Contenu Onglet Conversations -->
 
       </div>
     </div>
@@ -218,7 +296,9 @@
   <script>
     let adminKey = null;
 
-    // Vérifier si déjà connecté au chargement
+    // ========================================
+    // AUTH
+    // ========================================
     document.addEventListener('DOMContentLoaded', function() {
       const savedKey = sessionStorage.getItem('adminKey');
       if (savedKey) {
@@ -227,49 +307,34 @@
       }
     });
 
-    async function handleLogin(event) {
-      event.preventDefault();
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
       const testKey = document.getElementById('adminKeyInput').value;
-
       try {
-        const response = await fetch('/api/admin-conversations?action=stats', {
-          headers: { 'X-Admin-Key': testKey }
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
+        const response = await apiFetch('action=stats', { key: testKey });
+        if (response.success) {
           adminKey = testKey;
           sessionStorage.setItem('adminKey', testKey);
           showAdminContent();
-          loadStats();
+          loadDashboard();
         } else {
-          throw new Error('Clé admin invalide');
+          throw new Error();
         }
       } catch (error) {
         const errorDiv = document.getElementById('loginError');
-        errorDiv.textContent = 'Clé admin invalide. Veuillez réessayer.';
+        errorDiv.textContent = 'Clé admin invalide.';
         errorDiv.classList.remove('hidden');
       }
-    }
+    });
 
     async function testAdminKey(key) {
       try {
-        const response = await fetch('/api/admin-conversations?action=stats', {
-          headers: { 'X-Admin-Key': key }
-        });
-
-        if (response.ok) {
+        const response = await apiFetch('action=stats', { key });
+        if (response.success) {
           showAdminContent();
-          loadStats();
-        } else {
-          sessionStorage.removeItem('adminKey');
-          adminKey = null;
-        }
-      } catch (error) {
-        sessionStorage.removeItem('adminKey');
-        adminKey = null;
-      }
+          loadDashboard();
+        } else { clearAuth(); }
+      } catch { clearAuth(); }
     }
 
     function showAdminContent() {
@@ -277,93 +342,137 @@
       document.getElementById('adminContent').classList.remove('hidden');
     }
 
-    function logout() {
-      adminKey = null;
+    function clearAuth() {
       sessionStorage.removeItem('adminKey');
+      adminKey = null;
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      clearAuth();
       document.getElementById('authModal').classList.remove('hidden');
       document.getElementById('adminContent').classList.add('hidden');
       document.getElementById('adminKeyInput').value = '';
-    }
+    });
 
-    async function loadStats() {
-      if (!adminKey) return;
+    // ========================================
+    // HELPERS
+    // ========================================
+    async function apiFetch(query, options = {}) {
+      const key = options.key || adminKey;
+      const method = options.method || 'GET';
+      const body = options.body || null;
+      const headers = { 'X-Admin-Key': key };
+      if (body) headers['Content-Type'] = 'application/json';
 
-      try {
-        const dateFilter = document.getElementById('dateFilter')?.value || '';
-        const url = `/api/admin-conversations?action=stats${dateFilter ? '&dateFilter=' + dateFilter : ''}`;
+      const response = await fetch(`/api/admin-conversations?${query}`, {
+        method, headers, body: body ? JSON.stringify(body) : null
+      });
 
-        const response = await fetch(url, {
-          headers: { 'X-Admin-Key': adminKey }
-        });
-
-        if (response.status === 403) {
-          logout();
-          throw new Error('Session expirée. Veuillez vous reconnecter.');
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-          document.getElementById('totalSessions').textContent = data.stats.totalSessions;
-          document.getElementById('todaySessions').textContent = data.stats.todaySessions;
-          document.getElementById('totalMessages').textContent = data.stats.totalMessages;
-          document.getElementById('recentSessions').textContent = data.stats.recentSessions;
-        } else {
-          throw new Error(data.error || 'Erreur lors du chargement des statistiques');
-        }
-      } catch (error) {
-        showError('Erreur: ' + error.message);
+      if (response.status === 403) {
+        clearAuth();
+        document.getElementById('authModal').classList.remove('hidden');
+        document.getElementById('adminContent').classList.add('hidden');
+        throw new Error('Session expirée');
       }
+
+      // Pour l'export CSV, retourner le blob
+      if (options.raw) return response;
+
+      return await response.json();
     }
 
     function showError(message) {
       const errorDiv = document.getElementById('errorMessage');
       errorDiv.textContent = message;
       errorDiv.classList.remove('hidden');
-
-      setTimeout(() => {
-        errorDiv.classList.add('hidden');
-      }, 5000);
+      setTimeout(() => errorDiv.classList.add('hidden'), 5000);
     }
 
     // ========================================
-    // GESTION DES CONVERSATIONS
+    // ONGLETS
     // ========================================
+    const tabs = ['Dashboard', 'Conversations', 'Maintenance'];
 
+    tabs.forEach(tab => {
+      document.getElementById('tab' + tab).addEventListener('click', () => {
+        // Reset tous les onglets
+        document.querySelectorAll('.tab-button').forEach(btn => {
+          btn.classList.remove('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
+          btn.classList.add('text-gray-600');
+        });
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+
+        // Activer l'onglet sélectionné
+        const selectedTab = document.getElementById('tab' + tab);
+        selectedTab.classList.add('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
+        selectedTab.classList.remove('text-gray-600');
+        document.getElementById('content' + tab).classList.remove('hidden');
+
+        // Actions au clic
+        if (tab === 'Conversations') loadAllConversations();
+        if (tab === 'Maintenance') loadMaintenanceStatus();
+      });
+    });
+
+    // ========================================
+    // TABLEAU DE BORD
+    // ========================================
+    async function loadDashboard() {
+      await Promise.all([loadStats(), loadCacheStats(), loadOrderStats()]);
+      document.getElementById('lastRefresh').textContent =
+        'Dernière actualisation : ' + new Date().toLocaleTimeString('fr-FR');
+    }
+
+    async function loadStats() {
+      try {
+        const data = await apiFetch('action=stats');
+        if (data.success) {
+          document.getElementById('statTotalSessions').textContent = data.stats.totalSessions;
+          document.getElementById('statTodaySessions').textContent = data.stats.todaySessions;
+          document.getElementById('statTotalMessages').textContent = data.stats.totalMessages;
+          document.getElementById('statRecentSessions').textContent = data.stats.recentSessions;
+        }
+      } catch (error) { showError('Erreur stats: ' + error.message); }
+    }
+
+    async function loadCacheStats() {
+      try {
+        const data = await apiFetch('action=cacheStats');
+        if (data.success) {
+          document.getElementById('statCacheTotal').textContent = data.cache.totalEntries;
+          document.getElementById('statCacheHits').textContent = data.cache.totalHits;
+          document.getElementById('statCacheTopHits').textContent = data.cache.topHitCount;
+          document.getElementById('statCacheExpired').textContent = data.cache.expiredEntries;
+        }
+      } catch { /* Cache stats optionnelles */ }
+    }
+
+    async function loadOrderStats() {
+      try {
+        const data = await apiFetch('action=orderStats');
+        if (data.success) {
+          document.getElementById('statOrdersPaid').textContent = data.orders.totalPaid;
+          document.getElementById('statRevenue').textContent = data.orders.totalRevenue;
+          document.getElementById('statOrdersExpress').textContent = data.orders.expressCount;
+          document.getElementById('statOrdersPremium').textContent = data.orders.premiumCount;
+        }
+      } catch { /* Order stats optionnelles */ }
+    }
+
+    document.getElementById('refreshStatsBtn').addEventListener('click', loadDashboard);
+
+    // ========================================
+    // CONVERSATIONS
+    // ========================================
     let currentPage = 1;
-    let currentDateFilter = '';
     let currentSessionId = null;
     let currentAnonymousPage = 1;
 
-    // Gestion des onglets principaux
-    document.getElementById('tabStats').addEventListener('click', () => {
-      switchTab('Stats');
-    });
-
-    document.getElementById('tabConversations').addEventListener('click', () => {
-      switchTab('Conversations');
-      loadAllConversations();
-    });
-
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
-        btn.classList.add('text-gray-600');
-      });
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-
-      const selectedTab = document.getElementById(`tab${tab}`);
-      selectedTab.classList.add('active', 'border-b-2', 'border-blue-900', 'text-blue-900');
-      selectedTab.classList.remove('text-gray-600');
-      document.getElementById(`content${tab}`).classList.remove('hidden');
-    }
-
-    // Gestion des sous-onglets
+    // Sous-onglets
     document.getElementById('viewAll').addEventListener('click', () => {
       switchView('All');
       loadAllConversations();
     });
-
     document.getElementById('viewAnonymous').addEventListener('click', () => {
       switchView('Anonymous');
       loadAnonymousConversations(1);
@@ -374,44 +483,32 @@
         btn.classList.remove('active', 'bg-blue-600', 'text-white');
         btn.classList.add('bg-gray-300', 'text-gray-700');
       });
+      document.querySelectorAll('.view-content').forEach(c => c.classList.add('hidden'));
 
-      document.querySelectorAll('.view-content').forEach(content => content.classList.add('hidden'));
-
-      if (view === 'All') {
-        const btn = document.getElementById('viewAll');
-        btn.classList.add('active', 'bg-blue-600', 'text-white');
-        btn.classList.remove('bg-gray-300', 'text-gray-700');
-        document.getElementById('viewAllContent').classList.remove('hidden');
-      } else if (view === 'Anonymous') {
-        const btn = document.getElementById('viewAnonymous');
-        btn.classList.add('active', 'bg-blue-600', 'text-white');
-        btn.classList.remove('bg-gray-300', 'text-gray-700');
-        document.getElementById('viewAnonymousContent').classList.remove('hidden');
-      }
+      const btnId = view === 'All' ? 'viewAll' : 'viewAnonymous';
+      const contentId = view === 'All' ? 'viewAllContent' : 'viewAnonymousContent';
+      const btn = document.getElementById(btnId);
+      btn.classList.add('active', 'bg-blue-600', 'text-white');
+      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      document.getElementById(contentId).classList.remove('hidden');
     }
 
     async function loadAllConversations() {
       if (!adminKey) return;
-
-      currentDateFilter = document.getElementById('dateFilter').value;
-
-      let url = `/api/admin-conversations?action=list&page=${currentPage}&limit=50`;
-      if (currentDateFilter) url += `&dateFilter=${currentDateFilter}`;
+      const dateFilter = document.getElementById('dateFilter').value;
+      let query = `action=list&page=${currentPage}&limit=50`;
+      if (dateFilter) query += `&dateFilter=${dateFilter}`;
 
       try {
-        const response = await fetch(url, {
-          headers: { 'X-Admin-Key': adminKey }
-        });
-        const data = await response.json();
-
+        const data = await apiFetch(query);
         const list = document.getElementById('conversationsList');
-        list.innerHTML = '';
+        list.textContent = '';
 
         if (!data.sessions || data.sessions.length === 0) {
-          const emptyP = document.createElement('p');
-          emptyP.className = 'text-gray-500';
-          emptyP.textContent = 'Aucune conversation trouvée';
-          list.appendChild(emptyP);
+          const p = document.createElement('p');
+          p.className = 'text-gray-500';
+          p.textContent = 'Aucune conversation trouvée';
+          list.appendChild(p);
           return;
         }
 
@@ -420,120 +517,83 @@
           card.className = 'bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition';
           card.onclick = () => showConversation(session.id, session.title);
 
-          const flexDiv = document.createElement('div');
-          flexDiv.className = 'flex justify-between items-start';
-
-          const contentDiv = document.createElement('div');
-          contentDiv.className = 'flex-1';
-
           const titleH3 = document.createElement('h3');
           titleH3.className = 'font-bold text-lg text-blue-900';
           titleH3.textContent = session.title;
 
           const idP = document.createElement('p');
           idP.className = 'text-gray-600 text-sm';
-          const idShort = session.anonymous_identifier
+          idP.textContent = session.anonymous_identifier
             ? session.anonymous_identifier.substring(0, 8) + '...'
             : 'Session #' + session.id;
-          idP.textContent = idShort;
 
           const dateP = document.createElement('p');
           dateP.className = 'text-gray-500 text-sm mt-2';
-          dateP.textContent = `${new Date(session.started_at).toLocaleDateString('fr-FR')} - ${session.message_count} message(s)`;
+          dateP.textContent = new Date(session.started_at).toLocaleDateString('fr-FR')
+            + ' - ' + session.message_count + ' message(s)';
 
-          contentDiv.appendChild(titleH3);
-          contentDiv.appendChild(idP);
-          contentDiv.appendChild(dateP);
-          flexDiv.appendChild(contentDiv);
-          card.appendChild(flexDiv);
+          card.appendChild(titleH3);
+          card.appendChild(idP);
+          card.appendChild(dateP);
           list.appendChild(card);
         });
 
         renderPagination(data.page, data.pages);
-      } catch (error) {
-        showError('Erreur lors du chargement des conversations: ' + error.message);
-      }
+      } catch (error) { showError('Erreur conversations: ' + error.message); }
     }
 
     function renderPagination(page, totalPages) {
-      const pagination = document.getElementById('pagination');
-      pagination.innerHTML = '';
-
+      const container = document.getElementById('pagination');
+      container.textContent = '';
       if (totalPages <= 1) return;
 
-      if (page > 1) {
-        const prev = document.createElement('button');
-        prev.textContent = '\u2190 Pr\u00e9c\u00e9dent';
-        prev.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
-        prev.onclick = () => {
-          currentPage--;
-          loadAllConversations();
-        };
-        pagination.appendChild(prev);
-      }
+      const addBtn = (text, onClick, isActive) => {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.className = isActive
+          ? 'px-4 py-2 bg-blue-900 text-white rounded'
+          : 'px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400';
+        if (onClick) btn.onclick = onClick;
+        container.appendChild(btn);
+      };
 
+      if (page > 1) addBtn('\u2190', () => { currentPage--; loadAllConversations(); });
       for (let i = 1; i <= totalPages; i++) {
         if (i === page || i === 1 || i === totalPages || Math.abs(i - page) <= 2) {
-          const pageBtn = document.createElement('button');
-          pageBtn.textContent = i;
-          pageBtn.className = i === page
-            ? 'px-4 py-2 bg-blue-900 text-white rounded'
-            : 'px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400';
-          pageBtn.onclick = () => {
-            currentPage = i;
-            loadAllConversations();
-          };
-          pagination.appendChild(pageBtn);
+          addBtn(i, i !== page ? () => { currentPage = i; loadAllConversations(); } : null, i === page);
         } else if (Math.abs(i - page) === 3) {
           const dots = document.createElement('span');
           dots.textContent = '...';
           dots.className = 'px-2';
-          pagination.appendChild(dots);
+          container.appendChild(dots);
         }
       }
-
-      if (page < totalPages) {
-        const next = document.createElement('button');
-        next.textContent = 'Suivant \u2192';
-        next.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
-        next.onclick = () => {
-          currentPage++;
-          loadAllConversations();
-        };
-        pagination.appendChild(next);
-      }
+      if (page < totalPages) addBtn('\u2192', () => { currentPage++; loadAllConversations(); });
     }
 
     async function showConversation(sessionId, title) {
       if (!adminKey) return;
-
       currentSessionId = sessionId;
 
       try {
-        const response = await fetch(`/api/admin-conversations?action=messages&sessionId=${sessionId}`, {
-          headers: { 'X-Admin-Key': adminKey }
-        });
-        const data = await response.json();
-
+        const data = await apiFetch('action=messages&sessionId=' + sessionId);
         document.getElementById('modalTitle').textContent = title;
         const content = document.getElementById('modalContent');
-        content.innerHTML = '';
+        content.textContent = '';
 
         if (!data.messages || data.messages.length === 0) {
-          const emptyP = document.createElement('p');
-          emptyP.className = 'text-gray-500';
-          emptyP.textContent = 'Aucun message dans cette conversation';
-          content.appendChild(emptyP);
+          const p = document.createElement('p');
+          p.className = 'text-gray-500';
+          p.textContent = 'Aucun message';
+          content.appendChild(p);
         } else {
           data.messages.forEach(msg => {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = msg.role === 'user'
-              ? 'bg-blue-50 p-4 rounded-lg'
-              : 'bg-gray-50 p-4 rounded-lg';
+            const div = document.createElement('div');
+            div.className = msg.role === 'user' ? 'bg-blue-50 p-4 rounded-lg' : 'bg-gray-50 p-4 rounded-lg';
 
             const roleDiv = document.createElement('div');
-            roleDiv.className = `font-bold text-sm mb-2 ${msg.role === 'user' ? 'text-blue-900' : 'text-gray-700'}`;
-            roleDiv.textContent = msg.role === 'user' ? 'Question' : 'R\u00e9ponse';
+            roleDiv.className = 'font-bold text-sm mb-2 ' + (msg.role === 'user' ? 'text-blue-900' : 'text-gray-700');
+            roleDiv.textContent = msg.role === 'user' ? 'Question' : 'Réponse';
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'text-gray-800 whitespace-pre-line';
@@ -543,17 +603,15 @@
             dateDiv.className = 'text-xs text-gray-500 mt-2';
             dateDiv.textContent = new Date(msg.created_at).toLocaleString('fr-FR');
 
-            msgDiv.appendChild(roleDiv);
-            msgDiv.appendChild(contentDiv);
-            msgDiv.appendChild(dateDiv);
-            content.appendChild(msgDiv);
+            div.appendChild(roleDiv);
+            div.appendChild(contentDiv);
+            div.appendChild(dateDiv);
+            content.appendChild(div);
           });
         }
 
         document.getElementById('conversationModal').classList.remove('hidden');
-      } catch (error) {
-        showError('Erreur lors du chargement de la conversation: ' + error.message);
-      }
+      } catch (error) { showError('Erreur: ' + error.message); }
     }
 
     function closeConversationModal() {
@@ -561,140 +619,97 @@
       currentSessionId = null;
     }
 
-    async function deleteConversation() {
+    document.getElementById('closeModalBtn').addEventListener('click', closeConversationModal);
+    document.getElementById('closeModalBtn2').addEventListener('click', closeConversationModal);
+
+    document.getElementById('deleteConvBtn').addEventListener('click', async function() {
       if (!currentSessionId || !adminKey) return;
-
-      if (!confirm('\u00cates-vous s\u00fbr de vouloir supprimer cette conversation ?')) return;
-
+      if (!confirm('Supprimer cette conversation ?')) return;
       try {
-        await fetch(`/api/admin-conversations?sessionId=${currentSessionId}`, {
-          method: 'DELETE',
-          headers: { 'X-Admin-Key': adminKey }
-        });
-
+        await apiFetch('sessionId=' + currentSessionId, { method: 'DELETE' });
         closeConversationModal();
         loadAllConversations();
-      } catch (error) {
-        showError('Erreur lors de la suppression: ' + error.message);
-      }
-    }
+      } catch (error) { showError('Erreur suppression: ' + error.message); }
+    });
 
-    async function exportConversations() {
+    document.getElementById('exportBtn').addEventListener('click', async function() {
       if (!adminKey) return;
-
       const dateFilter = document.getElementById('dateFilter').value;
-      // Passer la clé admin dans le header via un lien temporaire
       try {
-        const response = await fetch(`/api/admin-conversations?action=export&dateFilter=${dateFilter}`, {
-          headers: { 'X-Admin-Key': adminKey }
-        });
-
-        if (!response.ok) {
-          throw new Error('Erreur export');
-        }
-
+        const response = await apiFetch('action=export&dateFilter=' + dateFilter, { raw: true });
+        if (!response.ok) throw new Error('Erreur export');
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `conversations-${dateFilter || 'all'}-${Date.now()}.csv`;
+        a.download = 'conversations-' + (dateFilter || 'all') + '-' + Date.now() + '.csv';
         a.click();
         window.URL.revokeObjectURL(url);
-      } catch (error) {
-        showError('Erreur export: ' + error.message);
-      }
-    }
+      } catch (error) { showError('Erreur export: ' + error.message); }
+    });
 
-    async function cleanupOldSessions() {
+    document.getElementById('cleanupBtn').addEventListener('click', async function() {
       if (!adminKey) return;
       if (!confirm('Supprimer les sessions anonymes de plus de 30 jours ?')) return;
-
       try {
-        const response = await fetch('/api/admin-conversations?action=cleanup', {
-          headers: { 'X-Admin-Key': adminKey }
-        });
-        const data = await response.json();
-
+        const data = await apiFetch('action=cleanup');
         if (data.success) {
-          alert(`${data.deleted} session(s) supprim\u00e9e(s)`);
+          alert(data.deleted + ' session(s) supprimée(s)');
           loadAllConversations();
-        } else {
-          showError('Erreur: ' + data.error);
         }
-      } catch (error) {
-        showError('Erreur nettoyage: ' + error.message);
-      }
-    }
+      } catch (error) { showError('Erreur nettoyage: ' + error.message); }
+    });
 
-    // Event listeners pour les filtres
     document.getElementById('dateFilter').addEventListener('change', () => {
       currentPage = 1;
       loadAllConversations();
     });
 
-    // ====================================
-    // GESTION DES CONVERSATIONS ANONYMES
-    // ====================================
-
-    async function loadAnonymousConversations(page = 1) {
+    // ========================================
+    // CONVERSATIONS ANONYMES
+    // ========================================
+    async function loadAnonymousConversations(page) {
       if (!adminKey) return;
-
-      currentAnonymousPage = page;
+      currentAnonymousPage = page || 1;
       const dateFilter = document.getElementById('dateFilter').value;
 
       try {
-        const response = await fetch(
-          `/api/admin-conversations?action=listAnonymous&page=${page}&limit=50&dateFilter=${dateFilter}`,
-          {
-            headers: { 'X-Admin-Key': adminKey }
-          }
+        const data = await apiFetch(
+          'action=listAnonymous&page=' + currentAnonymousPage + '&limit=50&dateFilter=' + dateFilter
         );
-
-        const data = await response.json();
-
         if (data.success) {
           renderAnonymousConversations(data.conversations);
           renderAnonymousPagination(data.pagination);
-        } else {
-          showError('Erreur: ' + data.error);
         }
-      } catch (error) {
-        console.error('Erreur chargement conversations anonymes:', error);
-        showError('Erreur chargement conversations');
-      }
+      } catch (error) { showError('Erreur: ' + error.message); }
     }
 
     function parseUserAgent(ua) {
       if (!ua || ua === 'Unknown') return 'Inconnu';
-
       if (ua.includes('Chrome') && !ua.includes('Edg')) return 'Chrome';
       if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
       if (ua.includes('Firefox')) return 'Firefox';
       if (ua.includes('Edg')) return 'Edge';
-      if (ua.includes('Opera') || ua.includes('OPR')) return 'Opera';
-
       return 'Autre';
     }
 
     function maskIP(ip) {
       if (!ip) return 'N/A';
       const parts = ip.split('.');
-      if (parts.length === 4) {
-        return `${parts[0]}.${parts[1]}.${parts[2]}.***`;
-      }
+      if (parts.length === 4) return parts[0] + '.' + parts[1] + '.' + parts[2] + '.***';
       return ip.substring(0, 15) + '...';
     }
 
     function renderAnonymousConversations(conversations) {
       const tbody = document.getElementById('anonymousConversationsList');
-      tbody.innerHTML = '';
+      tbody.textContent = '';
 
       if (!conversations || conversations.length === 0) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
         td.colSpan = 8;
         td.className = 'px-6 py-4 text-center text-gray-500';
-        td.textContent = 'Aucune conversation anonyme trouvée';
+        td.textContent = 'Aucune conversation anonyme';
         tr.appendChild(td);
         tbody.appendChild(tr);
         return;
@@ -704,37 +719,23 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-gray-50';
 
-        const idTd = document.createElement('td');
-        idTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
-        idTd.textContent = conv.id;
+        const cells = [
+          conv.id,
+          conv.anonymous_identifier ? conv.anonymous_identifier.substring(0, 8) + '...' : 'N/A',
+          maskIP(conv.ip_address),
+          parseUserAgent(conv.user_agent),
+          conv.title || 'Sans titre',
+          conv.message_count,
+          new Date(conv.started_at).toLocaleDateString('fr-FR') + ' '
+            + new Date(conv.started_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        ];
 
-        const anonTd = document.createElement('td');
-        anonTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono';
-        anonTd.textContent = conv.anonymous_identifier
-          ? conv.anonymous_identifier.substring(0, 8) + '...'
-          : 'N/A';
-
-        const ipTd = document.createElement('td');
-        ipTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600';
-        ipTd.textContent = maskIP(conv.ip_address);
-
-        const browserTd = document.createElement('td');
-        browserTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600';
-        browserTd.textContent = parseUserAgent(conv.user_agent);
-
-        const titleTd = document.createElement('td');
-        titleTd.className = 'px-6 py-4 text-sm text-gray-900 max-w-xs truncate';
-        titleTd.textContent = conv.title || 'Sans titre';
-
-        const msgTd = document.createElement('td');
-        msgTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600';
-        msgTd.textContent = conv.message_count;
-
-        const dateTd = document.createElement('td');
-        dateTd.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-600';
-        const date = new Date(conv.started_at).toLocaleDateString('fr-FR');
-        const time = new Date(conv.started_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        dateTd.textContent = `${date} ${time}`;
+        cells.forEach(text => {
+          const td = document.createElement('td');
+          td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
+          td.textContent = text;
+          tr.appendChild(td);
+        });
 
         const actionsTd = document.createElement('td');
         actionsTd.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium';
@@ -751,36 +752,27 @@
 
         actionsTd.appendChild(viewBtn);
         actionsTd.appendChild(deleteBtn);
-
-        tr.appendChild(idTd);
-        tr.appendChild(anonTd);
-        tr.appendChild(ipTd);
-        tr.appendChild(browserTd);
-        tr.appendChild(titleTd);
-        tr.appendChild(msgTd);
-        tr.appendChild(dateTd);
         tr.appendChild(actionsTd);
-
         tbody.appendChild(tr);
       });
     }
 
     function renderAnonymousPagination(pagination) {
       const container = document.getElementById('anonymousPagination');
-      container.innerHTML = '';
-
-      if (pagination.totalPages <= 1) return;
+      container.textContent = '';
+      if (!pagination || pagination.totalPages <= 1) return;
 
       const { page, totalPages } = pagination;
 
-      if (page > 1) {
-        const prev = document.createElement('button');
-        prev.textContent = '\u2190 Pr\u00e9c\u00e9dent';
-        prev.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
-        prev.onclick = () => loadAnonymousConversations(page - 1);
-        container.appendChild(prev);
-      }
+      const addBtn = (text, onClick) => {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+        btn.onclick = onClick;
+        container.appendChild(btn);
+      };
 
+      if (page > 1) addBtn('\u2190', () => loadAnonymousConversations(page - 1));
       for (let i = 1; i <= totalPages; i++) {
         if (i === page || i === 1 || i === totalPages || Math.abs(i - page) <= 2) {
           const btn = document.createElement('button');
@@ -788,9 +780,7 @@
           btn.className = i === page
             ? 'px-4 py-2 bg-blue-900 text-white rounded'
             : 'px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400';
-          if (i !== page) {
-            btn.onclick = () => loadAnonymousConversations(i);
-          }
+          if (i !== page) btn.onclick = () => loadAnonymousConversations(i);
           container.appendChild(btn);
         } else if (Math.abs(i - page) === 3) {
           const dots = document.createElement('span');
@@ -799,41 +789,92 @@
           container.appendChild(dots);
         }
       }
-
-      if (page < totalPages) {
-        const next = document.createElement('button');
-        next.textContent = 'Suivant \u2192';
-        next.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
-        next.onclick = () => loadAnonymousConversations(page + 1);
-        container.appendChild(next);
-      }
+      if (page < totalPages) addBtn('\u2192', () => loadAnonymousConversations(page + 1));
     }
 
     async function deleteAnonymousConversation(sessionId) {
       if (!adminKey) return;
+      if (!confirm('Supprimer cette conversation anonyme ?')) return;
+      try {
+        const data = await apiFetch('sessionId=' + sessionId, { method: 'DELETE' });
+        if (data.success) loadAnonymousConversations(currentAnonymousPage);
+        else showError('Erreur: ' + data.error);
+      } catch (error) { showError('Erreur: ' + error.message); }
+    }
 
-      if (!confirm('\u00cates-vous s\u00fbr de vouloir supprimer cette conversation anonyme ?')) {
-        return;
-      }
+    // ========================================
+    // MAINTENANCE
+    // ========================================
+    async function loadMaintenanceStatus() {
+      try {
+        const data = await apiFetch('action=maintenance');
+        updateMaintenanceUI(data.maintenance);
+      } catch (error) { showError('Erreur maintenance: ' + error.message); }
+    }
+
+    function updateMaintenanceUI(maintenance) {
+      const banner = document.getElementById('maintenanceBanner');
+      const toggleBtn = document.getElementById('toggleMaintenanceBtn');
+      const isActive = maintenance.enabled;
+
+      banner.textContent = '';
+      banner.className = isActive
+        ? 'mb-6 p-4 rounded-lg border-2 bg-red-50 border-red-300'
+        : 'mb-6 p-4 rounded-lg border-2 bg-green-50 border-green-300';
+
+      const statusP = document.createElement('p');
+      statusP.className = isActive ? 'text-red-800 font-semibold text-lg' : 'text-green-800 font-semibold text-lg';
+      statusP.textContent = isActive ? 'Le site est EN MAINTENANCE' : 'Le site est EN LIGNE';
+      banner.appendChild(statusP);
+
+      toggleBtn.textContent = isActive ? 'Désactiver la maintenance' : 'Activer la maintenance';
+      toggleBtn.className = isActive
+        ? 'px-6 py-3 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700'
+        : 'px-6 py-3 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700';
+
+      // Remplir les champs
+      document.getElementById('bypassPasswordInput').value = maintenance.bypassPassword || '';
+      document.getElementById('maintenanceMessageInput').value = maintenance.message || '';
+    }
+
+    document.getElementById('toggleMaintenanceBtn').addEventListener('click', async function() {
+      const btn = this;
+      const isCurrentlyActive = btn.textContent.includes('Désactiver');
+      const action = isCurrentlyActive ? 'disableMaintenance' : 'enableMaintenance';
+
+      if (!isCurrentlyActive && !confirm('Activer le mode maintenance ? Les visiteurs ne pourront plus utiliser le site.')) return;
 
       try {
-        const response = await fetch(`/api/admin-conversations?sessionId=${sessionId}`, {
-          method: 'DELETE',
-          headers: { 'X-Admin-Key': adminKey }
+        const data = await apiFetch('action=' + action, { method: 'POST' });
+        if (data.success) updateMaintenanceUI(data.maintenance);
+        else showError('Erreur: ' + data.error);
+      } catch (error) { showError('Erreur: ' + error.message); }
+    });
+
+    document.getElementById('saveBypassBtn').addEventListener('click', async function() {
+      const password = document.getElementById('bypassPasswordInput').value.trim();
+      if (!password) { showError('Entrez un mot de passe'); return; }
+      try {
+        const data = await apiFetch('action=maintenanceConfig', {
+          method: 'POST',
+          body: { bypassPassword: password }
         });
+        if (data.success) alert('Mot de passe sauvegardé');
+        else showError('Erreur: ' + data.error);
+      } catch (error) { showError('Erreur: ' + error.message); }
+    });
 
-        const data = await response.json();
-
-        if (data.success) {
-          loadAnonymousConversations(currentAnonymousPage);
-        } else {
-          showError('Erreur lors de la suppression: ' + data.error);
-        }
-      } catch (error) {
-        console.error('Erreur suppression conversation anonyme:', error);
-        showError('Erreur lors de la suppression: ' + error.message);
-      }
-    }
+    document.getElementById('saveMessageBtn').addEventListener('click', async function() {
+      const message = document.getElementById('maintenanceMessageInput').value.trim();
+      try {
+        const data = await apiFetch('action=maintenanceConfig', {
+          method: 'POST',
+          body: { message: message }
+        });
+        if (data.success) alert('Message sauvegardé');
+        else showError('Erreur: ' + data.error);
+      } catch (error) { showError('Erreur: ' + error.message); }
+    });
   </script>
 </body>
 </html>

@@ -6,7 +6,12 @@ import { logInfo, sendError, sendSuccess } from '../lib/utils.js';
 import {
   getAnonymousConversationSessions,
   countAnonymousConversationSessions,
-  deleteOldAnonymousSessions
+  deleteOldAnonymousSessions,
+  getCacheStats,
+  getOrderStats,
+  getMaintenanceStatus,
+  setSiteSetting,
+  createSiteSettingsTable
 } from '../lib/db.js';
 
 export default async function handler(req, res) {
@@ -37,6 +42,18 @@ export default async function handler(req, res) {
         return await handleExport(req, res, dateFilter);
       case 'cleanup':
         return await handleCleanup(req, res);
+      case 'cacheStats':
+        return await handleCacheStats(res);
+      case 'orderStats':
+        return await handleOrderStats(res);
+      case 'maintenance':
+        return await handleGetMaintenance(res);
+      case 'enableMaintenance':
+        return await handleToggleMaintenance(res, true);
+      case 'disableMaintenance':
+        return await handleToggleMaintenance(res, false);
+      case 'maintenanceConfig':
+        return await handleMaintenanceConfig(req, res);
       default:
         if (req.method === 'DELETE' && sessionId) {
           return await handleDelete(req, res, sessionId);
@@ -330,4 +347,83 @@ async function handleExport(req, res, dateFilter) {
 
   // BOM UTF-8 pour Excel
   return res.status(200).send('\uFEFF' + csv);
+}
+
+// ====================================
+// CACHE STATS
+// ====================================
+async function handleCacheStats(res) {
+  try {
+    const cache = await getCacheStats();
+    return sendSuccess(res, {
+      cache: {
+        totalEntries: cache.totalEntries,
+        totalHits: cache.totalHits,
+        topHitCount: cache.maxHits,
+        expiredEntries: cache.totalEntries - cache.activeEntries
+      }
+    });
+  } catch (error) {
+    logInfo('error', 'Erreur handleCacheStats', { error: error.message });
+    return sendError(res, 500, error.message);
+  }
+}
+
+// ====================================
+// ORDER STATS
+// ====================================
+async function handleOrderStats(res) {
+  try {
+    const orders = await getOrderStats();
+    return sendSuccess(res, { orders });
+  } catch (error) {
+    logInfo('error', 'Erreur handleOrderStats', { error: error.message });
+    return sendError(res, 500, error.message);
+  }
+}
+
+// ====================================
+// MAINTENANCE
+// ====================================
+async function handleGetMaintenance(res) {
+  try {
+    const maintenance = await getMaintenanceStatus();
+    return sendSuccess(res, { maintenance });
+  } catch (error) {
+    logInfo('error', 'Erreur handleGetMaintenance', { error: error.message });
+    return sendError(res, 500, error.message);
+  }
+}
+
+async function handleToggleMaintenance(res, enable) {
+  try {
+    await createSiteSettingsTable();
+    await setSiteSetting('maintenance_enabled', enable ? 'true' : 'false');
+    logInfo('info', enable ? 'Maintenance activée' : 'Maintenance désactivée');
+    const maintenance = await getMaintenanceStatus();
+    return sendSuccess(res, { maintenance });
+  } catch (error) {
+    logInfo('error', 'Erreur handleToggleMaintenance', { error: error.message });
+    return sendError(res, 500, error.message);
+  }
+}
+
+async function handleMaintenanceConfig(req, res) {
+  try {
+    await createSiteSettingsTable();
+    const body = req.body || {};
+
+    if (body.bypassPassword !== undefined) {
+      await setSiteSetting('maintenance_bypass_password', body.bypassPassword);
+    }
+    if (body.message !== undefined) {
+      await setSiteSetting('maintenance_message', body.message);
+    }
+
+    logInfo('info', 'Configuration maintenance mise à jour');
+    return sendSuccess(res, { updated: true });
+  } catch (error) {
+    logInfo('error', 'Erreur handleMaintenanceConfig', { error: error.message });
+    return sendError(res, 500, error.message);
+  }
 }

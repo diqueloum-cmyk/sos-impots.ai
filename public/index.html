@@ -354,42 +354,56 @@
 </head>
 <body class="bg-white text-gray-800">
 
-  <!-- ÉCRAN DE PROTECTION TEMPORAIRE -->
-  <div id="lockScreen" style="position:fixed;inset:0;background:#0F1F3D;z-index:9999;display:flex;align-items:center;justify-content:center;">
-    <div style="background:white;border-radius:12px;padding:40px 32px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
-      <div style="font-size:32px;margin-bottom:12px;">🔒</div>
+  <!-- ÉCRAN DE MAINTENANCE (dynamique via API) -->
+  <div id="maintenanceScreen" style="position:fixed;inset:0;background:#0F1F3D;z-index:9999;display:none;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:12px;padding:40px 32px;width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+      <div style="font-size:32px;margin-bottom:12px;">🔧</div>
       <h2 style="font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:#0F1F3D;margin:0 0 8px;">Site en maintenance</h2>
-      <p style="font-size:13px;color:#6B7280;margin:0 0 24px;">Accès réservé aux tests.</p>
-      <input id="lockInput" type="password" placeholder="Code d'accès"
+      <p id="maintenanceMessage" style="font-size:13px;color:#6B7280;margin:0 0 24px;">Nous revenons très vite !</p>
+      <input id="bypassInput" type="password" placeholder="Mot de passe"
         style="width:100%;box-sizing:border-box;border:1.5px solid #E5E7EB;border-radius:8px;padding:10px 14px;font-size:14px;outline:none;margin-bottom:12px;"
-        onkeydown="if(event.key==='Enter') checkLock()" />
-      <button onclick="checkLock()"
+        onkeydown="if(event.key==='Enter') checkBypass()" />
+      <button onclick="checkBypass()"
         style="width:100%;background:#1A56DB;color:white;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;">
-        Entrer
+        Accéder
       </button>
-      <p id="lockError" style="color:#DC2626;font-size:12px;margin:10px 0 0;display:none;">Code incorrect.</p>
+      <p id="bypassError" style="color:#DC2626;font-size:12px;margin:10px 0 0;display:none;">Mot de passe incorrect.</p>
     </div>
   </div>
   <script>
     (function() {
-      const CODE = 'sos2025';
-      if (sessionStorage.getItem('unlocked') === '1') {
-        document.getElementById('lockScreen').style.display = 'none';
+      // Bypass via query string ?bypass=MOTDEPASSE
+      var params = new URLSearchParams(window.location.search);
+      var bypassParam = params.get('bypass');
+      if (bypassParam) {
+        sessionStorage.setItem('maintenanceBypass', bypassParam);
       }
-      window.checkLock = function() {
-        const val = document.getElementById('lockInput').value;
-        if (val === CODE) {
-          sessionStorage.setItem('unlocked', '1');
-          document.getElementById('lockScreen').style.display = 'none';
-        } else {
-          document.getElementById('lockError').style.display = 'block';
-          document.getElementById('lockInput').value = '';
-          document.getElementById('lockInput').focus();
+
+      // Vérifier le mode maintenance via l'API
+      var savedBypass = sessionStorage.getItem('maintenanceBypass');
+      var healthUrl = '/api/health' + (savedBypass ? '?bypass=' + encodeURIComponent(savedBypass) : '');
+      fetch(healthUrl).then(function(r) { return r.json(); }).then(function(data) {
+        if (!data.maintenance) return; // Pas en maintenance (ou bypass valide)
+
+        // Afficher l'écran de maintenance
+        var screen = document.getElementById('maintenanceScreen');
+        screen.style.display = 'flex';
+        if (data.maintenanceMessage) {
+          document.getElementById('maintenanceMessage').textContent = data.maintenanceMessage;
         }
+      }).catch(function() { /* health check failed — let site through */ });
+
+      window.checkBypass = function() {
+        var val = document.getElementById('bypassInput').value;
+        if (!val) return;
+        // Vérifier le mot de passe via l'API health avec le bypass
+        sessionStorage.setItem('maintenanceBypass', val);
+        // Recharger pour vérifier
+        window.location.reload();
       };
     })();
   </script>
-  <!-- FIN ÉCRAN DE PROTECTION -->
+  <!-- FIN ÉCRAN DE MAINTENANCE -->
 
   <!-- Cookie Banner and Modal will be created dynamically by cookies.js -->
 

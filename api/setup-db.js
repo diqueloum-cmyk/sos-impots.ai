@@ -2,7 +2,7 @@
 // À exécuter UNE SEULE FOIS après avoir configuré Vercel Postgres
 // URL: https://votre-site.vercel.app/api/setup-db
 
-import { createCacheTable, createConversationTables, migrateConversationTablesForAnonymous, migrateAddOpenaiThreadId, createOrdersTable, createDropboxTokensTable } from '../lib/db.js';
+import { createCacheTable, createConversationTables, migrateConversationTablesForAnonymous, migrateAddOpenaiThreadId, createOrdersTable, createDropboxTokensTable, createSiteSettingsTable } from '../lib/db.js';
 import logger from '../lib/logger.js';
 
 export default async function handler(req, res) {
@@ -111,6 +111,9 @@ export default async function handler(req, res) {
 
     await createDropboxTokensTable();
     logger.info('Table dropbox_tokens créée');
+
+    await createSiteSettingsTable();
+    logger.info('Table site_settings créée');
 
     logger.info('Base de données initialisée avec succès');
 

@@ -6,7 +6,8 @@ import {
   createAnonymousConversationSession,
   addConversationMessage,
   getSessionThreadId,
-  updateSessionThreadId
+  updateSessionThreadId,
+  getMaintenanceStatus
 } from '../lib/db.js';
 import {
   chatRateLimiter,
@@ -65,6 +66,18 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Vérifier le mode maintenance
+    try {
+      const maintenance = await getMaintenanceStatus();
+      if (maintenance.enabled) {
+        return res.status(503).json({
+          error: maintenance.message || 'Site en maintenance. Veuillez réessayer plus tard.'
+        });
+      }
+    } catch {
+      // Si la table n'existe pas, on continue normalement
+    }
+
     const { message, sessionId } = req.body;
 
     logger.info('[DEBUG] Requête reçue:', { message: message?.substring(0, 30), sessionId, sessionIdType: typeof sessionId });

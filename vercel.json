@@ -13,6 +13,12 @@
 "api/test-payment.js": {
       "maxDuration": 30
     },
+    "api/health.js": {
+      "maxDuration": 10
+    },
+    "api/admin-conversations.js": {
+      "maxDuration": 30
+    },
     "api/dropbox-auth.js": {
       "maxDuration": 10
     },
