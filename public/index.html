@@ -601,79 +601,86 @@
     <div class="max-w-5xl mx-auto">
       <h2 class="text-3xl font-bold text-center text-blue-900 mb-12">💬 Comment ça marche ?</h2>
 
-      <!-- Timeline -->
-      <div style="display:flex;flex-direction:column;gap:0;position:relative;">
-
-        <!-- Ligne verticale -->
-        <div style="position:absolute;left:28px;top:40px;bottom:40px;width:3px;background:linear-gradient(to bottom,#1A56DB,#057A55,#C05621);border-radius:2px;" class="hidden md:block"></div>
-
-        <!-- Étape 1 -->
-        <div style="display:flex;gap:24px;align-items:flex-start;margin-bottom:32px;" class="flex-col md:flex-row">
-          <div style="min-width:56px;height:56px;background:#1A56DB;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0;z-index:1;" class="mx-auto md:mx-0">1</div>
-          <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg flex-1">
-            <h3 class="text-xl font-bold text-blue-900 mb-2">Posez votre question — Gratuit</h3>
-            <p class="text-gray-700">
-              Notre agent IA vous fournit une information claire et immédiate, basée sur les textes de loi et la jurisprudence française.
-            </p>
-          </div>
+      <!-- Stepper horizontal : 3 pastilles -->
+      <div class="grid grid-cols-3 max-w-md mx-auto mb-12">
+        <div class="text-center">
+          <div style="width:44px;height:44px;background:#1A56DB;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;">1</div>
+          <p class="text-xs font-semibold text-blue-900 mt-2">Question gratuite</p>
         </div>
-
-        <!-- Étape 2 -->
-        <div style="display:flex;gap:24px;align-items:flex-start;margin-bottom:32px;" class="flex-col md:flex-row">
-          <div style="min-width:56px;height:56px;background:#057A55;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0;z-index:1;" class="mx-auto md:mx-0">2</div>
-          <div class="flex-1">
-            <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg mb-6">
-              <h3 class="text-xl font-bold text-blue-900 mb-2">Choisissez la formule adaptée à votre situation</h3>
-            </div>
-            <div class="grid md:grid-cols-3 gap-4">
-              <!-- Analyse Express -->
-              <div class="bg-blue-50 border-2 border-blue-200 p-5 rounded-lg flex flex-col">
-                <h4 class="text-base font-bold text-blue-900 mb-2">🟦 Analyse Express IA</h4>
-                <p class="text-2xl font-bold text-blue-900 mb-3">39 €</p>
-                <p class="text-gray-700 text-sm mb-3">Analyse claire, risques identifiés, étapes suivantes.</p>
-                <p class="text-gray-600 text-sm mb-2">✅ <strong>Idéal pour :</strong> salaires, crédits d'impôt, question sur une déclaration, courrier simple, doute fiscal.</p>
-                <p class="text-gray-500 text-sm mt-auto pt-2 border-t border-blue-100">⏱️ Sous 24h ouvrées</p>
-              </div>
-              <!-- Analyse Premium -->
-              <div class="bg-green-50 border-2 border-green-200 p-5 rounded-lg flex flex-col">
-                <h4 class="text-base font-bold text-green-900 mb-2">🟩 Analyse Premium IA + Fiscaliste</h4>
-                <p class="text-2xl font-bold text-green-900 mb-3">99 €</p>
-                <p class="text-gray-700 text-sm mb-3">Tout le contenu Express + relecture et validation par un fiscaliste partenaire.</p>
-                <p class="text-gray-600 text-sm mb-2">✅ <strong>Idéal pour :</strong> revenus fonciers, plus-values, revenus d'indépendant, proposition de rectification, multi-revenus, crypto.</p>
-                <p class="text-gray-500 text-sm mt-auto pt-2 border-t border-green-100">⏱️ Sous 48h ouvrées</p>
-              </div>
-              <!-- Mise en relation -->
-              <div class="bg-orange-50 border-2 border-orange-200 p-5 rounded-lg flex flex-col">
-                <h4 class="text-base font-bold text-orange-900 mb-2">🟧 Mise en relation avocat fiscaliste</h4>
-                <p class="text-2xl font-bold text-orange-900 mb-3">Gratuit</p>
-                <p class="text-gray-700 text-sm mb-3">Dossier transmis à un avocat partenaire spécialisé. Premier échange téléphonique offert.</p>
-                <p class="text-gray-600 text-sm mb-2">✅ <strong>Idéal pour :</strong> contrôle fiscal, redressement, contentieux, enjeu &gt; 5 000 €, revenus étrangers, cession d'entreprise.</p>
-                <p class="text-gray-500 text-sm mt-auto pt-2 border-t border-orange-100">⏱️ Contact sous 24h ouvrées</p>
-              </div>
-            </div>
-          </div>
+        <div class="text-center">
+          <div style="width:44px;height:44px;background:#057A55;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;">2</div>
+          <p class="text-xs font-semibold text-green-900 mt-2">Votre formule</p>
         </div>
-
-        <!-- Étape 3 -->
-        <div style="display:flex;gap:24px;align-items:flex-start;" class="flex-col md:flex-row">
-          <div style="min-width:56px;height:56px;background:#C05621;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0;z-index:1;" class="mx-auto md:mx-0">3</div>
-          <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg flex-1">
-            <h3 class="text-xl font-bold text-blue-900 mb-2">Déposez vos documents en sécurité</h3>
-            <p class="text-gray-700 mb-4">
-              Vous recevez un lien vers votre espace personnel sécurisé pour déposer vos documents.
-            </p>
-            <div class="flex flex-wrap gap-3 text-sm text-gray-600 mb-4">
-              <span class="bg-gray-100 px-3 py-1 rounded-full">🔒 Chiffrement SSL/TLS</span>
-              <span class="bg-gray-100 px-3 py-1 rounded-full">🇨🇭 RGPD — Hébergement Suisse</span>
-              <span class="bg-gray-100 px-3 py-1 rounded-full">🚫 Aucun partage sans accord</span>
-            </div>
-            <p class="text-gray-700 font-medium">
-              Votre analyse démarre dès réception de vos documents.
-            </p>
-          </div>
+        <div class="text-center">
+          <div style="width:44px;height:44px;background:#C05621;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;">3</div>
+          <p class="text-xs font-semibold text-orange-900 mt-2">Documents sécurisés</p>
         </div>
-
       </div>
+
+      <!-- Étape 1 -->
+      <div class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 max-w-4xl mx-auto mb-6">
+        <div class="flex items-center gap-3 mb-3">
+          <span style="width:32px;height:32px;background:#1A56DB;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;">1</span>
+          <h3 class="text-lg font-bold text-blue-900">Posez votre question — Gratuit</h3>
+        </div>
+        <p class="text-gray-700 ml-11">
+          Notre agent IA vous fournit une information claire et immédiate, basée sur les textes de loi et la jurisprudence française.
+        </p>
+      </div>
+
+      <!-- Étape 2 -->
+      <div class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 max-w-4xl mx-auto mb-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span style="width:32px;height:32px;background:#057A55;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;">2</span>
+          <h3 class="text-lg font-bold text-blue-900">Choisissez la formule adaptée à votre situation</h3>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4 ml-0 md:ml-11">
+          <!-- Analyse Express -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-5 flex flex-col">
+            <h4 class="text-base font-bold text-blue-900 mb-1">🟦 Analyse Express IA</h4>
+            <p class="text-2xl font-bold text-blue-900 mb-3">39 €</p>
+            <p class="text-gray-700 text-sm mb-3">Analyse claire, risques identifiés, étapes suivantes.</p>
+            <p class="text-gray-600 text-sm mb-2">✅ <strong>Idéal pour :</strong> salaires, crédits d'impôt, question sur une déclaration, courrier simple, doute fiscal.</p>
+            <p class="text-gray-500 text-sm mt-auto pt-2 border-t border-blue-100">⏱️ Sous 24h ouvrées</p>
+          </div>
+          <!-- Analyse Premium -->
+          <div class="bg-green-50 border border-green-200 rounded-lg p-5 flex flex-col">
+            <h4 class="text-base font-bold text-green-900 mb-1">🟩 Analyse Premium IA + Fiscaliste</h4>
+            <p class="text-2xl font-bold text-green-900 mb-3">99 €</p>
+            <p class="text-gray-700 text-sm mb-3">Tout le contenu Express + relecture et validation par un fiscaliste partenaire.</p>
+            <p class="text-gray-600 text-sm mb-2">✅ <strong>Idéal pour :</strong> revenus fonciers, plus-values, revenus d'indépendant, proposition de rectification, multi-revenus, crypto.</p>
+            <p class="text-gray-500 text-sm mt-auto pt-2 border-t border-green-100">⏱️ Sous 48h ouvrées</p>
+          </div>
+          <!-- Mise en relation -->
+          <div class="bg-orange-50 border border-orange-200 rounded-lg p-5 flex flex-col">
+            <h4 class="text-base font-bold text-orange-900 mb-1">🟧 Mise en relation avocat fiscaliste</h4>
+            <p class="text-2xl font-bold text-orange-900 mb-3">Gratuit</p>
+            <p class="text-gray-700 text-sm mb-3">Dossier transmis à un avocat partenaire spécialisé. Premier échange téléphonique offert.</p>
+            <p class="text-gray-600 text-sm mb-2">✅ <strong>Idéal pour :</strong> contrôle fiscal, redressement, contentieux, enjeu &gt; 5 000 €, revenus étrangers, cession d'entreprise.</p>
+            <p class="text-gray-500 text-sm mt-auto pt-2 border-t border-orange-100">⏱️ Contact sous 24h ouvrées</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Étape 3 -->
+      <div class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 max-w-4xl mx-auto">
+        <div class="flex items-center gap-3 mb-3">
+          <span style="width:32px;height:32px;background:#C05621;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;">3</span>
+          <h3 class="text-lg font-bold text-blue-900">Déposez vos documents en sécurité</h3>
+        </div>
+        <p class="text-gray-700 ml-11 mb-3">
+          Vous recevez un lien vers votre espace personnel sécurisé pour déposer vos documents.
+        </p>
+        <div class="flex flex-wrap gap-3 text-sm text-gray-600 ml-11 mb-3">
+          <span class="bg-gray-100 px-3 py-1 rounded-full">🔒 Chiffrement SSL/TLS</span>
+          <span class="bg-gray-100 px-3 py-1 rounded-full">🇨🇭 RGPD — Hébergement Suisse</span>
+          <span class="bg-gray-100 px-3 py-1 rounded-full">🚫 Aucun partage sans accord</span>
+        </div>
+        <p class="text-gray-700 font-medium ml-11">
+          Votre analyse démarre dès réception de vos documents.
+        </p>
+      </div>
+
     </div>
   </section>
 
