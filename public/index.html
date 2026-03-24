@@ -636,6 +636,38 @@
     </div>
   </section>
 
+  <!-- CTA Chat Section (after Pricing) -->
+  <section class="py-16 px-4 bg-white">
+    <div class="max-w-2xl mx-auto text-center">
+      <h2 class="text-2xl font-bold text-blue-900 mb-3">Prêt à poser votre question ?</h2>
+      <p class="text-gray-600 mb-8">Notre agent fiscal IA vous répond immédiatement — première question offerte.</p>
+      <div class="chat-block">
+        <div class="chat-header">
+          <div class="chat-header-dot"></div>
+          <div class="chat-header-title">Agent Fiscal SOS-IMPOTS.AI</div>
+          <div class="chat-header-badge">🔒 Chiffré</div>
+        </div>
+        <div class="chat-body" style="min-height:auto;max-height:none;">
+          <div class="msg-ai">
+            <div class="msg-ai-avatar">⚖️</div>
+            <div class="msg-ai-bubble">
+              Vous avez une question fiscale ?<br>
+              Posez-la ici, je vous réponds tout de suite.
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input class="chat-input" type="text" id="ctaUserInput" placeholder="Posez votre question fiscale..."
+                 onkeydown="if(event.key==='Enter') sendFromCta()">
+          <button class="chat-send" onclick="sendFromCta()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Testimonials Section -->
   <section id="testimonials" class="py-16 px-4 bg-white">
     <div class="max-w-6xl mx-auto">
@@ -749,6 +781,20 @@
 
     // Compteur pour les IDs de messages uniques
     let messageCounter = 0;
+
+    // CTA chat : transfère la question vers le chat principal
+    function sendFromCta() {
+      const ctaInput = document.getElementById('ctaUserInput');
+      const question = ctaInput.value.trim();
+      if (!question) return;
+
+      const mainInput = document.getElementById('userInput');
+      mainInput.value = question;
+      ctaInput.value = '';
+
+      document.getElementById('chatContainer').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => { mainInput.focus(); askGPT(); }, 500);
+    }
 
     // Fonction principale pour poser une question
     async function askGPT() {
