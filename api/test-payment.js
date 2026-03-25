@@ -79,12 +79,18 @@ export default async function handler(req, res) {
               🧪 Email de test — bypass paiement
             </p>
             <p>Bonjour${name ? ' ' + name : ''},</p>
-            <p>Votre <strong>${offerLabel}</strong> est bien enregistrée.</p>
+            <p>Merci pour votre commande.<br>
+            Votre <strong>${offerLabel}</strong> est bien enregistrée.</p>
+            <p>Si vous souhaitez nous transmettre des documents pour affiner votre analyse (courrier reçu, déclarations, justificatifs), vous pouvez les déposer via votre espace sécurisé personnel :</p>
             <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:24px 0;">
               ${dropboxSection}
             </div>
+            <p style="font-size:14px;color:#374151;">
+              Ce dépôt est facultatif mais recommandé — plus votre dossier est documenté, plus notre analyse sera précise et utile.
+            </p>
             <p style="font-size:13px;color:#6B7280;">
-              Livraison sous <strong>${deliveryDelay} ouvrées</strong>.
+              Votre analyse démarre dès réception de votre commande, avec ou sans documents.<br>
+              Livraison sous <strong>${deliveryDelay} ouvrées</strong> à cette adresse : <strong>${email}</strong>.
             </p>
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
             <p style="font-size:12px;color:#9CA3AF;margin:0;">L'équipe SOS-IMPOTS.AI — contact@sos-impots.ai</p>

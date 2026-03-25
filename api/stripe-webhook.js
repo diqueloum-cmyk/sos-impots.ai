@@ -52,7 +52,7 @@ async function sendConfirmationToClient({ email, name, offerType, dropboxUrl, dr
         <p>Merci pour votre commande.<br>
         Votre <strong>${offerLabel}</strong> est bien enregistrée.</p>
 
-        <p>Déposez vos documents via votre espace sécurisé personnel :</p>
+        <p>Si vous souhaitez nous transmettre des documents pour affiner votre analyse (courrier reçu, déclarations, justificatifs), vous pouvez les déposer via votre espace sécurisé personnel :</p>
 
         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
           <p style="margin: 0 0 12px 0;">
@@ -68,18 +68,13 @@ async function sendConfirmationToClient({ email, name, offerType, dropboxUrl, dr
           </a>
         </div>
 
-        <p style="font-size: 14px; color: #374151;"><strong>Documents à déposer :</strong></p>
-        <ul style="font-size: 14px; color: #6B7280; padding-left: 20px;">
-          <li>Proposition de rectification ou courrier reçu (scan ou photo)</li>
-          <li>Déclarations de revenus des années concernées</li>
-          <li>Tout justificatif que vous jugez utile</li>
-        </ul>
+        <p style="font-size: 14px; color: #374151;">
+          Ce dépôt est facultatif mais recommandé — plus votre dossier est documenté, plus notre analyse sera précise et utile.
+        </p>
 
         <p style="font-size: 13px; color: #6B7280;">
-          Vos documents sont protégés par un chiffrement SSL/TLS, hébergés en Europe, conformes RGPD.<br>
-          Aucun partage avec des tiers sans votre accord.<br><br>
-          Dès réception, votre analyse démarre immédiatement.<br>
-          Livraison sous <strong>${deliveryDelay} ouvrées</strong>.
+          Votre analyse démarre dès réception de votre commande, avec ou sans documents.<br>
+          Livraison sous <strong>${deliveryDelay} ouvrées</strong> à cette adresse : <strong>${email}</strong>.
         </p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
         <p style="font-size: 12px; color: #9CA3AF; margin: 0;">
