@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vérifiez avant de déclarer — SOS-IMPOTS.AI</title>
+  <meta name="description" content="Posez votre question fiscale gratuitement. Réponse immédiate par notre IA spécialisée en droit fiscal français.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Google Tag Manager — remplacer GTM-XXXXXXX par votre ID de conteneur -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-XXXXXXX');</script>
+
+  <style>
+    :root {
+      --navy: #0A2540;
+      --blue: #1565C0;
+      --cyan: #00B4D8;
+      --cyan-light: #00E5FF;
+      --cyan-soft: rgba(0, 180, 216, 0.08);
+      --blue-bg: #E8F4FD;
+      --blue-border: #C5E3F7;
+      --cream: #F0F4F8;
+      --white: #FFFFFF;
+      --text: #1A2B3C;
+      --text-body: #334155;
+      --text-muted: #64748B;
+      --text-light: #94A3B8;
+      --border: #E2E8F0;
+      --green: #2A7D4F;
+      --green-soft: rgba(42, 125, 79, 0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--cream); min-height: 100vh; }
+
+    .topbar { background: var(--navy); padding: 14px 24px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .topbar-logo { font-family: Georgia, serif; color: var(--white); font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+    .topbar-logo span { color: var(--cyan-light); }
+    .topbar-badge { background: var(--cyan); color: var(--white); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+    .hero { background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 60%, var(--cyan) 100%); padding: 56px 24px 48px; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -60%; left: -30%; width: 160%; height: 160%; background: radial-gradient(ellipse at 30% 20%, rgba(0,229,255,0.06) 0%, transparent 60%); pointer-events: none; }
+    .hero-eyebrow { font-size: 13px; font-weight: 600; color: var(--cyan-light); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; opacity: 0; animation: fadeUp 0.6s 0.2s forwards; }
+    .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(28px, 5vw, 44px); color: var(--white); line-height: 1.2; max-width: 640px; margin: 0 auto 20px; opacity: 0; animation: fadeUp 0.6s 0.4s forwards; }
+    .hero-sub { font-size: 17px; color: rgba(255,255,255,0.75); max-width: 520px; margin: 0 auto 32px; line-height: 1.6; opacity: 0; animation: fadeUp 0.6s 0.6s forwards; }
+    .hero-signature { display: inline-block; background: rgba(0,229,255,0.10); border: 1px solid rgba(0,229,255,0.22); border-radius: 8px; padding: 14px 24px; color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 500; line-height: 1.5; max-width: 520px; opacity: 0; animation: fadeUp 0.6s 0.8s forwards; }
+    .hero-arrow { margin-top: 36px; opacity: 0; animation: fadeUp 0.6s 1s forwards; }
+    .hero-arrow svg { width: 28px; height: 28px; color: rgba(255,255,255,0.3); animation: bounce 2s infinite; }
+
+    .chat-section { padding: 48px 24px 56px; max-width: 680px; margin: 0 auto; }
+    .chat-label { text-align: center; margin-bottom: 24px; }
+    .chat-label-text { font-size: 14px; font-weight: 600; color: var(--green); background: var(--green-soft); display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 20px; }
+    .chat-label-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+
+    /* Chat widget */
+    .chat-block { background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(15,31,61,0.08); }
+    .chat-header { background: var(--navy); padding: 16px 20px; display: flex; align-items: center; gap: 10px; }
+    .chat-header-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 6px #22C55E; }
+    .chat-header-title { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--white); letter-spacing: 0.3px; }
+    .chat-header-title span { color: var(--cyan-light); }
+    .chat-header-badge { margin-left: auto; background: rgba(255,255,255,0.15); color: var(--white); font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .chat-body { padding: 20px; min-height: 320px; max-height: 420px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+    .chat-notice { background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #0369A1; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .msg-ai { display: flex; gap: 10px; align-items: flex-start; }
+    .msg-ai-avatar { width: 32px; height: 32px; background: var(--navy); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+    .msg-ai-bubble { background: #F1F5F9; border-radius: 0 12px 12px 12px; padding: 12px 14px; font-size: 13px; line-height: 1.6; color: var(--navy); max-width: 85%; }
+    .msg-user { display: flex; justify-content: flex-end; }
+    .msg-user-bubble { background: var(--blue); color: white; border-radius: 12px 0 12px 12px; padding: 12px 14px; font-size: 13px; line-height: 1.6; max-width: 85%; white-space: pre-line; }
+    .typing-cursor { display: inline-block; width: 2px; height: 14px; background: var(--navy); margin-left: 2px; vertical-align: middle; animation: blink 0.8s infinite; }
+    .chat-input-area { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+    .chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chat-suggestion { background: var(--cyan-soft); border: 1px solid rgba(0,180,216,0.2); border-radius: 8px; padding: 7px 12px; font-size: 12px; color: var(--navy); cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+    .chat-suggestion:hover { background: rgba(0,180,216,0.15); border-color: var(--cyan); }
+    .chat-input-row { display: flex; gap: 10px; }
+    .chat-input { flex: 1; border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; color: var(--text); }
+    .chat-input::placeholder { color: var(--text-light); }
+    .chat-input:focus { border-color: var(--blue); }
+    .chat-send { background: linear-gradient(135deg, var(--blue), var(--cyan)); color: var(--white); border: none; border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: opacity 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+    .chat-send:hover { opacity: 0.9; }
+    .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .trust-bar { display: flex; justify-content: center; flex-wrap: wrap; gap: 24px; padding: 0 24px 24px; max-width: 680px; margin: 0 auto; }
+    .trust-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+
+    .reassurance { max-width: 680px; margin: 0 auto; padding: 0 24px 48px; }
+    .reassurance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .reassurance-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .reassurance-card h4 { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+    .reassurance-card p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+    .escalade { max-width: 680px; margin: 0 auto; padding: 0 24px 48px; }
+    .escalade-box { background: var(--white); border: 1px solid var(--border); border-left: 3px solid var(--blue); border-radius: 0 12px 12px 0; padding: 20px 24px; font-size: 14px; line-height: 1.7; color: var(--text-muted); }
+    .escalade-box strong { color: var(--navy); }
+
+    footer { background: var(--navy); padding: 32px 24px; text-align: center; }
+    .footer-brand { font-family: Georgia, serif; color: var(--white); font-size: 16px; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px; }
+    .footer-brand span { color: var(--cyan-light); }
+    .footer-desc { color: rgba(255,255,255,0.4); font-size: 12px; margin-bottom: 16px; line-height: 1.5; }
+    .footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 16px; }
+    .footer-links a { color: rgba(255,255,255,0.4); text-decoration: none; font-size: 12px; transition: color 0.2s; }
+    .footer-links a:hover { color: rgba(255,255,255,0.7); }
+    .footer-legal { color: rgba(255,255,255,0.25); font-size: 11px; max-width: 480px; margin: 0 auto; line-height: 1.5; }
+    .footer-address { color: rgba(255,255,255,0.3); font-size: 11px; margin-top: 12px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    @media (max-width: 600px) {
+      .hero { padding: 40px 20px 36px; }
+      .hero-signature { font-size: 14px; padding: 12px 18px; }
+      .chat-section { padding: 32px 16px 40px; }
+      .chat-body { padding: 16px; }
+      .chat-input-area { padding: 12px 16px; }
+      .chat-suggestion { font-size: 12px; padding: 6px 10px; }
+      .reassurance-grid { grid-template-columns: 1fr; }
+      .trust-bar { gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+  <div class="topbar">
+    <span class="topbar-logo">SOS-IMPOTS<span>.AI</span></span>
+    <span class="topbar-badge">Question gratuite</span>
+  </div>
+
+  <section class="hero">
+    <p class="hero-eyebrow">Déclaration de revenus 2025</p>
+    <h1>Vérifiez avant de valider votre déclaration</h1>
+    <p class="hero-sub">Posez votre question fiscale gratuitement. Notre IA spécialisée en droit fiscal français vous répond immédiatement.</p>
+    <div class="hero-signature">
+      Quelques minutes de vérification peuvent éviter des coûts qui se chiffrent en milliers d'euros.
+    </div>
+    <div class="hero-arrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </div>
+  </section>
+
+  <section class="chat-section">
+    <div class="chat-label">
+      <span class="chat-label-text">
+        <span class="chat-label-dot"></span>
+        Agent fiscal disponible
+      </span>
+    </div>
+
+    <div class="chat-block">
+      <div class="chat-header">
+        <div class="chat-header-dot"></div>
+        <div class="chat-header-title">Agent Fiscal SOS-IMPOTS<span>.AI</span></div>
+        <div class="chat-header-badge">🔒 Chiffré</div>
+      </div>
+
+      <div class="chat-body" id="chatContainer">
+        <div class="chat-notice">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Une question fiscale offerte — réponse immédiate par notre IA
+        </div>
+        <div class="msg-ai">
+          <div class="msg-ai-avatar">⚖️</div>
+          <div class="msg-ai-bubble">
+            Bonjour, je suis l'agent fiscal de SOS-IMPOTS.AI.<br><br>
+            <strong>Posez votre question sur votre déclaration de revenus 2025</strong> — option fiscale, case à cocher, revenu à déclarer, choix à arbitrer — je vous réponds immédiatement.
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="chat-suggestions">
+          <button class="chat-suggestion" onclick="fillAndSend(this)">Dois-je déclarer mes revenus Airbnb ?</button>
+          <button class="chat-suggestion" onclick="fillAndSend(this)">Micro-foncier ou régime réel ?</button>
+          <button class="chat-suggestion" onclick="fillAndSend(this)">Je ne comprends pas un courrier des impôts</button>
+          <button class="chat-suggestion" onclick="fillAndSend(this)">Frais réels ou abattement 10% ?</button>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" class="chat-input" id="userInput" placeholder="Décrivez votre question fiscale..." />
+          <button class="chat-send" id="sendBtn" onclick="askGPT()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="trust-bar">
+    <div class="trust-item"><span>🔒</span> Confidentiel</div>
+    <div class="trust-item"><span>⚡</span> Réponse immédiate</div>
+    <div class="trust-item"><span>✅</span> Conforme RGPD</div>
+    <div class="trust-item"><span>🎯</span> Sans engagement</div>
+  </div>
+
+  <section class="reassurance">
+    <div class="reassurance-grid">
+      <div class="reassurance-card">
+        <h4>Droit fiscal français</h4>
+        <p>IA entraînée sur les textes de loi, le BOFiP et la jurisprudence fiscale française.</p>
+      </div>
+      <div class="reassurance-card">
+        <h4>Réponse structurée</h4>
+        <p>Pas de jargon. Une analyse claire, les points de risque, les étapes à suivre.</p>
+      </div>
+      <div class="reassurance-card">
+        <h4>Première question offerte</h4>
+        <p>Testez le service gratuitement. Décidez ensuite si vous souhaitez aller plus loin.</p>
+      </div>
+      <div class="reassurance-card">
+        <h4>Avocat fiscaliste si nécessaire</h4>
+        <p>Si la situation le justifie, mise en relation avec un avocat fiscaliste indépendant.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="escalade">
+    <div class="escalade-box">
+      <strong>Vous n'êtes pas seul face à votre déclaration.</strong><br>
+      Notre IA vous aide à comprendre et à décider. Si un accompagnement humain est nécessaire, vous êtes orienté vers un avocat fiscaliste indépendant. Outil d'aide à la compréhension et à la décision — ne remplace pas un conseil fiscal personnalisé.
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-brand">SOS-IMPOTS<span>.AI</span></div>
+    <div class="footer-desc">Conseil fiscal en ligne avec IA et fiscalistes spécialisés</div>
+    <div class="footer-links">
+      <a href="/cgv.html">CGV</a>
+      <a href="/mentions-legales.html">Mentions légales</a>
+      <a href="/politique-confidentialite.html">Confidentialité</a>
+      <a href="/politique-rgpd.html">RGPD</a>
+      <a href="mailto:contact@sos-impots.ai">Contact</a>
+    </div>
+    <div class="footer-legal">
+      Outil d'information et d'aide à la compréhension fiscale. Ne constitue pas un conseil fiscal personnalisé. Données traitées de manière confidentielle — Chiffrement SSL/TLS — Conforme RGPD.
+    </div>
+    <div class="footer-address">
+      SOS-IMPOTS.AI SAS — 10 rue de la Paix, 75002 Paris — SIREN 882 682 289 — contact@sos-impots.ai
+    </div>
+    <div class="footer-legal" style="margin-top: 12px;">
+      © 2026 SOS-IMPOTS.AI — Tous droits réservés
+    </div>
+  </footer>
+
+  <script>
+    let currentSessionId = null;
+    let isProcessing = false;
+    let messageCounter = 0;
+
+    function fillAndSend(el) {
+      document.getElementById('userInput').value = el.textContent;
+      askGPT();
+    }
+
+    async function askGPT() {
+      if (isProcessing) return;
+
+      const userInput = document.getElementById('userInput');
+      const question = userInput.value.trim();
+      if (!question) return;
+
+      // Masquer les suggestions après la première question
+      const suggestions = document.querySelector('.chat-suggestions');
+      if (suggestions) suggestions.style.display = 'none';
+
+      // Push GTM event : question posée
+      if (window.dataLayer) {
+        dataLayer.push({ event: 'question_posee', question_text: question });
+      }
+
+      isProcessing = true;
+      const sendBtn = document.getElementById('sendBtn');
+      sendBtn.disabled = true;
+
+      addMessage(question, 'user');
+      userInput.value = '';
+
+      const loadingId = addMessage('Réflexion en cours...', 'assistant', true);
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ message: question, sessionId: currentSessionId })
+        });
+
+        if (!response.ok) {
+          let errorMessage = 'Erreur serveur';
+          try { const err = await response.json(); errorMessage = err.error || errorMessage; } catch(e) {}
+          removeMessage(loadingId);
+          throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        removeMessage(loadingId);
+
+        if (data.success) {
+          if (data.sessionId) currentSessionId = data.sessionId;
+          addTypingMessage(data.response, data.paymentUrl || null, data.offreChoisie || null);
+
+          // Push GTM event : réponse reçue
+          if (window.dataLayer) {
+            dataLayer.push({ event: 'reponse_recue', session_id: currentSessionId });
+          }
+        } else {
+          throw new Error(data.error || 'Erreur lors de la génération de la réponse');
+        }
+
+      } catch (error) {
+        removeMessage(loadingId);
+        addMessage('Erreur : ' + error.message + '. Veuillez réessayer.', 'assistant');
+      } finally {
+        sendBtn.disabled = false;
+        isProcessing = false;
+      }
+    }
+
+    function addMessage(message, sender, isLoading = false) {
+      const chatContainer = document.getElementById('chatContainer');
+      const messageId = 'msg_' + (++messageCounter);
+
+      if (sender === 'user') {
+        const div = document.createElement('div');
+        div.id = messageId;
+        div.className = 'msg-user';
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-user-bubble';
+        bubble.textContent = message;
+        div.appendChild(bubble);
+        chatContainer.appendChild(div);
+      } else {
+        const div = document.createElement('div');
+        div.id = messageId;
+        div.className = 'msg-ai';
+        const avatar = document.createElement('div');
+        avatar.className = 'msg-ai-avatar';
+        avatar.textContent = '⚖️';
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-ai-bubble';
+        if (isLoading) {
+          const textSpan = document.createElement('span');
+          textSpan.textContent = message;
+          const cursor = document.createElement('span');
+          cursor.className = 'typing-cursor';
+          bubble.appendChild(textSpan);
+          bubble.appendChild(cursor);
+        } else {
+          bubble.textContent = message;
+        }
+        div.appendChild(avatar);
+        div.appendChild(bubble);
+        chatContainer.appendChild(div);
+      }
+
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      return messageId;
+    }
+
+    function removeMessage(messageId) {
+      const el = document.getElementById(messageId);
+      if (el) el.remove();
+    }
+
+    function addTypingMessage(text, paymentUrl, offreChoisie) {
+      const chatContainer = document.getElementById('chatContainer');
+      const div = document.createElement('div');
+      div.className = 'msg-ai';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'msg-ai-avatar';
+      avatar.textContent = '⚖️';
+      div.appendChild(avatar);
+
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-ai-bubble';
+      div.appendChild(bubble);
+      chatContainer.appendChild(div);
+
+      const textSpan = document.createElement('span');
+      const cursor = document.createElement('span');
+      cursor.className = 'typing-cursor';
+      cursor.textContent = '|';
+      bubble.appendChild(textSpan);
+      bubble.appendChild(cursor);
+
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < text.length) {
+          textSpan.textContent = text.substring(0, ++i);
+        } else {
+          textSpan.textContent = text;
+          cursor.remove();
+          clearInterval(interval);
+
+          if (paymentUrl) {
+            const STRIPE_LINKS = {
+              express_39: 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00',
+              premium_99: 'https://buy.stripe.com/bJe28qfUOa4i2hAff0ejK01'
+            };
+            const offres = [
+              { id: 'express_39', label: 'Analyse Express IA', prix: '39 €', desc: 'Réponse par e-mail sous 48h' },
+              { id: 'premium_99', label: 'Analyse Premium IA + Fiscaliste', prix: '99 €', desc: 'Accompagnement complet avec expert' }
+            ];
+            const btnWrapper = document.createElement('div');
+            btnWrapper.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:12px;';
+            offres.forEach(offre => {
+              const isRecommande = offre.id === offreChoisie;
+              const baseUrl = STRIPE_LINKS[offre.id];
+              const lien = currentSessionId ? baseUrl + '?client_reference_id=' + encodeURIComponent(currentSessionId) : baseUrl;
+              const btn = document.createElement('a');
+              btn.href = lien;
+              btn.target = '_blank';
+              btn.rel = 'noopener noreferrer';
+              btn.style.cssText = isRecommande
+                ? 'display:flex;align-items:center;justify-content:space-between;background:#057A55;color:white;font-weight:600;padding:12px 16px;border-radius:10px;font-size:13px;text-decoration:none;border:2px solid #057A55;'
+                : 'display:flex;align-items:center;justify-content:space-between;background:white;color:#057A55;font-weight:600;padding:12px 16px;border-radius:10px;font-size:13px;text-decoration:none;border:2px solid #057A55;';
+              const infoDiv = document.createElement('div');
+              const labelSpan = document.createElement('div');
+              labelSpan.style.cssText = 'font-weight:700;font-size:13px;';
+              labelSpan.textContent = (isRecommande ? '⭐ ' : '') + offre.label;
+              const descSpan = document.createElement('div');
+              descSpan.style.cssText = 'font-weight:400;font-size:11px;opacity:0.85;margin-top:2px;';
+              descSpan.textContent = offre.desc;
+              infoDiv.appendChild(labelSpan);
+              infoDiv.appendChild(descSpan);
+              const prixSpan = document.createElement('div');
+              prixSpan.style.cssText = 'font-size:16px;font-weight:800;margin-left:12px;white-space:nowrap;';
+              prixSpan.textContent = '💳 ' + offre.prix;
+              btn.appendChild(infoDiv);
+              btn.appendChild(prixSpan);
+              btnWrapper.appendChild(btn);
+            });
+            bubble.appendChild(btnWrapper);
+
+            // Bloquer le chat après la question gratuite
+            const input = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendBtn');
+            input.disabled = true;
+            input.placeholder = 'Choisissez une formule ci-dessus pour continuer';
+            sendButton.disabled = true;
+          }
+        }
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, 30);
+    }
+
+    document.getElementById('userInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') askGPT();
+    });
+
+    // Push GTM event : page vue
+    if (window.dataLayer) {
+      dataLayer.push({ event: 'landing_declaration_vue' });
+    }
+  </script>
+
+</body>
+</html>
