@@ -204,13 +204,29 @@ export default async function handler(req, res) {
         }
 
         // Détecter le choix d'offre et préparer l'URL de paiement Stripe
-        if (internalData?.offre_choisie) {
-          const STRIPE_LINKS = {
-            express_39: 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00',
-            premium_99: 'https://buy.stripe.com/bJe28qfUOa4i2hAff0ejK01'
-          };
-          const paymentUrl = STRIPE_LINKS[internalData.offre_choisie];
-          if (paymentUrl) internalData._paymentUrl = paymentUrl;
+        const STRIPE_LINKS = {
+          express_39: 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00',
+          premium_99: 'https://buy.stripe.com/bJe28qfUOa4i2hAff0ejK01'
+        };
+
+        let offreKey = internalData?.offre_choisie || null;
+
+        // Fallback : détecter l'offre depuis le texte si ---INTERNAL--- absent ou incomplet
+        if (!offreKey || !STRIPE_LINKS[offreKey]) {
+          const isConfirmation = answer.includes('bouton de paiement') ||
+            answer.includes('Express IA (39') || answer.includes('Premium IA + fiscaliste (99') ||
+            answer.includes('sélectionnée');
+          if (isConfirmation) {
+            if (answer.includes('Express') && answer.includes('39')) offreKey = 'express_39';
+            else if (answer.includes('Premium') && answer.includes('99')) offreKey = 'premium_99';
+          }
+          if (offreKey) logger.info('Offre détectée par fallback texte:', offreKey);
+        }
+
+        if (offreKey && STRIPE_LINKS[offreKey]) {
+          if (!internalData) internalData = {};
+          internalData.offre_choisie = offreKey;
+          internalData._paymentUrl = STRIPE_LINKS[offreKey];
         }
 
       } catch (error) {
