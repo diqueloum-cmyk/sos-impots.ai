@@ -1,12 +1,16 @@
 import crypto from 'crypto';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import Anthropic from '@anthropic-ai/sdk';
+import { parse as parseYaml } from 'yaml';
 import { parseCookies, setCorsHeaders, handleCorsPreflight, createCookie } from '../lib/utils.js';
 import {
   getCachedAnswer,
   saveCachedAnswer,
   createAnonymousConversationSession,
   addConversationMessage,
-  getSessionThreadId,
-  updateSessionThreadId,
+  getConversationHistory,
   getMaintenanceStatus
 } from '../lib/db.js';
 import {
@@ -18,28 +22,28 @@ import {
 } from '../lib/ratelimit.js';
 import logger from '../lib/logger.js';
 
-/**
- * Sépare la réponse visible du bloc ---INTERNAL---
- * @param {string} fullResponse - Réponse complète de l'assistant
- * @returns {{ visibleResponse: string, internalData: object|null }}
- */
-/**
- * Supprime les annotations File Search d'OpenAI (ex: 【4:0†fichier.txt】)
- */
-function stripFileSearchAnnotations(text) {
-  return text.replace(/【[^】]*】/g, '').replace(/ {2,}/g, ' ').trim();
-}
+// Charger le system prompt depuis agent_console.yaml une seule fois au démarrage
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const agentConfig = parseYaml(readFileSync(join(__dirname, '..', 'agent_console.yaml'), 'utf-8'));
+const systemPrompt = agentConfig.system;
 
+/**
+ * Sépare la réponse visible du bloc ---INTERNAL--- et retire [[QUESTION-GRATUITE-UTILISEE]]
+ * Le texte brut (avec marqueurs) est conservé dans fullAnswer pour l'historique API.
+ */
 function parseAgentResponse(fullResponse) {
   const separator = '---INTERNAL---';
-  const separatorIndex = fullResponse.indexOf(separator);
 
+  // Retirer [[QUESTION-GRATUITE-UTILISEE]] de l'affichage — conserver dans fullResponse
+  let displayText = fullResponse.replace('[[QUESTION-GRATUITE-UTILISEE]]', '').trim();
+
+  const separatorIndex = displayText.indexOf(separator);
   if (separatorIndex === -1) {
-    return { visibleResponse: stripFileSearchAnnotations(fullResponse.trim()), internalData: null };
+    return { visibleResponse: displayText, internalData: null };
   }
 
-  const visibleResponse = stripFileSearchAnnotations(fullResponse.substring(0, separatorIndex).trim());
-  const jsonString = fullResponse.substring(separatorIndex + separator.length).trim();
+  const visibleResponse = displayText.substring(0, separatorIndex).trim();
+  const jsonString = displayText.substring(separatorIndex + separator.length).trim();
 
   let internalData = null;
   try {
@@ -53,10 +57,8 @@ function parseAgentResponse(fullResponse) {
 }
 
 export default async function handler(req, res) {
-  // Configurer CORS avec liste blanche
   setCorsHeaders(res, req);
 
-  // Gérer preflight CORS
   if (handleCorsPreflight(req, res)) {
     return;
   }
@@ -93,29 +95,20 @@ export default async function handler(req, res) {
     const cookies = parseCookies(req.headers.cookie || '');
 
     const rateLimit = await checkRateLimit(chatRateLimiter, clientIp);
-
     if (!rateLimit.success) {
       logger.security(`Rate limit dépassé pour ${clientIp}`);
       return sendRateLimitError(res, rateLimit);
     }
-
     addRateLimitHeaders(res, rateLimit);
 
-    // Vérifier que la clé API et l'Assistant ID sont présents
-    if (!process.env.OPENAI_API_KEY) {
-      logger.error('OPENAI_API_KEY not found in environment variables');
+    // Vérifier que la clé API Anthropic est présente
+    if (!process.env.ANTHROPIC_API_KEY) {
+      logger.error('ANTHROPIC_API_KEY not found in environment variables');
       return res.status(500).json({
         error: 'Configuration manquante. Veuillez contacter l\'administrateur.'
       });
     }
 
-    const ASSISTANT_ID = process.env.ASSISTANT_ID;
-    if (!ASSISTANT_ID) {
-      logger.error('ASSISTANT_ID non configuré');
-      return res.status(500).json({ error: 'Configuration manquante.' });
-    }
-
-    // Mesurer le temps de réponse
     const startTime = Date.now();
 
     // ====================================
@@ -149,7 +142,7 @@ export default async function handler(req, res) {
       logger.error('Erreur création session:', error);
     }
 
-    // Vérifier le cache UNIQUEMENT si c'est un nouveau message sans session
+    // Cache uniquement pour les nouvelles conversations substantielles
     const isNewConversation = !sessionId;
     const isSubstantialMessage = message.trim().length > 30;
 
@@ -165,205 +158,43 @@ export default async function handler(req, res) {
     let tokensUsed = 0;
 
     if (cachedResponse) {
-      // Réponse trouvée dans le cache — nettoyer les éventuelles annotations File Search
-      answer = stripFileSearchAnnotations(cachedResponse.answer);
+      answer = cachedResponse.answer;
       fromCache = true;
       logger.info('Réponse servie depuis le cache (hit count:', cachedResponse.hitCount, ')');
-
-      // Même en cas de cache, créer un thread OpenAI avec le contexte
-      // pour que la suite de la conversation fonctionne
-      if (conversationSessionId) {
-        try {
-          const existingThreadId = await getSessionThreadId(conversationSessionId);
-          if (!existingThreadId) {
-            const openaiHeaders = {
-              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-              'Content-Type': 'application/json',
-              'OpenAI-Beta': 'assistants=v2'
-            };
-            // Créer le thread avec la question et la réponse cachée pré-remplies
-            const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-              method: 'POST',
-              headers: openaiHeaders,
-              body: JSON.stringify({
-                messages: [
-                  { role: 'user', content: message },
-                  { role: 'assistant', content: answer }
-                ]
-              })
-            });
-            if (threadResponse.ok) {
-              const threadData = await threadResponse.json();
-              await updateSessionThreadId(conversationSessionId, threadData.id);
-              logger.debug('Thread OpenAI créé avec contexte cache:', threadData.id);
-            }
-          }
-        } catch (e) {
-          logger.warn('Impossible de créer le thread OpenAI pour la réponse en cache:', e.message);
-        }
-      }
     } else {
-      // Pas de cache, utiliser l'Assistant OpenAI
+      // Appel Claude API
       try {
-        const openaiHeaders = {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2'
-        };
+        // Récupérer l'historique complet de la session depuis la DB
+        const history = conversationSessionId
+          ? await getConversationHistory(conversationSessionId)
+          : [];
 
-        // Étape 1: Récupérer ou créer un thread OpenAI
-        let threadId = null;
+        // Ajouter le message courant à l'historique
+        history.push({ role: 'user', content: message });
 
-        if (conversationSessionId) {
-          threadId = await getSessionThreadId(conversationSessionId);
-        }
-        logger.info('[DEBUG] Thread récupéré:', { conversationSessionId, threadId });
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-        if (threadId) {
-          // Vérifier que le thread existe toujours (fallback si expiré/supprimé)
-          const checkResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}`, {
-            headers: openaiHeaders
-          });
-
-          if (!checkResponse.ok) {
-            logger.warn('Thread OpenAI expiré ou supprimé, création d\'un nouveau:', threadId);
-            threadId = null;
-          }
-        }
-
-        if (!threadId) {
-          // Créer un nouveau thread
-          const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-            method: 'POST',
-            headers: openaiHeaders,
-            body: JSON.stringify({})
-          });
-
-          if (!threadResponse.ok) {
-            logger.error('OpenAI Thread Creation Error:', threadResponse.status);
-            throw new Error('Erreur lors de la création du thread');
-          }
-
-          const threadData = await threadResponse.json();
-          threadId = threadData.id;
-
-          // Sauvegarder le threadId dans la session
-          if (conversationSessionId) {
-            await updateSessionThreadId(conversationSessionId, threadId);
-          }
-
-          logger.debug('Nouveau thread OpenAI créé:', threadId);
-        } else {
-          logger.debug('Thread OpenAI réutilisé:', threadId);
-        }
-
-        // Étape 2: Ajouter le message au thread
-        const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-          method: 'POST',
-          headers: openaiHeaders,
-          body: JSON.stringify({
-            role: 'user',
-            content: message
-          })
+        const claudeResponse = await client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          temperature: 0,
+          system: systemPrompt,
+          messages: history
         });
 
-        if (!messageResponse.ok) {
-          logger.error('OpenAI Message Error:', messageResponse.status);
-          throw new Error('Erreur lors de l\'ajout du message');
-        }
-
-        // Étape 3: Exécuter l'assistant
-        const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
-          method: 'POST',
-          headers: openaiHeaders,
-          body: JSON.stringify({
-            assistant_id: ASSISTANT_ID,
-            temperature: 0.3
-          })
-        });
-
-        if (!runResponse.ok) {
-          logger.error('OpenAI Run Error:', runResponse.status);
-          throw new Error('Erreur lors de l\'exécution de l\'assistant');
-        }
-
-        const runData = await runResponse.json();
-        const runId = runData.id;
-
-        // Étape 4: Attendre que l'exécution soit terminée (polling)
-        let runStatus = 'queued';
-        let attempts = 0;
-        const maxAttempts = 60; // 60 secondes maximum (augmenté pour les assistants)
-
-        while (runStatus !== 'completed' && attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1 seconde
-
-          const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
-            headers: {
-              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-              'OpenAI-Beta': 'assistants=v2'
-            }
-          });
-
-          if (!statusResponse.ok) {
-            logger.error('OpenAI Status Check Error:', statusResponse.status);
-            throw new Error('Erreur lors de la vérification du statut');
-          }
-
-          const statusData = await statusResponse.json();
-          runStatus = statusData.status;
-
-          logger.debug(`Assistant run status (attempt ${attempts}):`, runStatus);
-
-          if (runStatus === 'failed' || runStatus === 'cancelled' || runStatus === 'expired') {
-            logger.error('Assistant run failed with status:', runStatus, 'Details:', statusData);
-            throw new Error('L\'assistant n\'a pas pu traiter la demande');
-          }
-
-          attempts++;
-        }
-
-        if (runStatus !== 'completed') {
-          logger.error('Assistant timeout after', attempts, 'attempts. Last status:', runStatus);
-          throw new Error('Timeout: L\'assistant met trop de temps à répondre');
-        }
-
-        // Étape 5: Récupérer les messages du thread
-        const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'OpenAI-Beta': 'assistants=v2'
-          }
-        });
-
-        if (!messagesResponse.ok) {
-          logger.error('OpenAI Messages Retrieval Error:', messagesResponse.status);
-          throw new Error('Erreur lors de la récupération des messages');
-        }
-
-        const messagesData = await messagesResponse.json();
-
-        // Récupérer le dernier message de l'assistant
-        const assistantMessage = messagesData.data.find(msg => msg.role === 'assistant');
-
-        if (!assistantMessage || !assistantMessage.content || assistantMessage.content.length === 0) {
-          throw new Error('Aucune réponse de l\'assistant');
-        }
-
-        fullAnswer = assistantMessage.content[0].text.value;
+        // fullAnswer contient les marqueurs internes — transmis tel quel à l'historique
+        fullAnswer = claudeResponse.content[0].text;
         const { visibleResponse, internalData: parsedInternalData } = parseAgentResponse(fullAnswer);
         answer = visibleResponse;
         internalData = parsedInternalData;
 
-        // Estimer les tokens (approximation basée sur la longueur)
-        tokensUsed = Math.ceil((message.length + fullAnswer.length) / 4);
+        tokensUsed = (claudeResponse.usage?.input_tokens || 0) + (claudeResponse.usage?.output_tokens || 0);
 
-        // Sauvegarder dans le cache UNIQUEMENT pour les nouvelles conversations
+        // Sauvegarder dans le cache uniquement pour les nouvelles conversations sans données internes
         if (isNewConversation && isSubstantialMessage && !internalData) {
-          await saveCachedAnswer(message, visibleResponse);
+          await saveCachedAnswer(message, answer);
         }
 
-        // Logger les données internes si présentes
         if (internalData) {
           logger.info('Données internes agent reçues:', {
             offre: internalData.offre_choisie,
@@ -372,27 +203,24 @@ export default async function handler(req, res) {
           });
         }
 
-        // Détecter le choix d'offre et préparer l'URL de paiement
-        if (internalData && internalData.offre_choisie) {
+        // Détecter le choix d'offre et préparer l'URL de paiement Stripe
+        if (internalData?.offre_choisie) {
           const STRIPE_LINKS = {
             express_39: 'https://buy.stripe.com/3cIbJ09wqa4i5tMff0ejK00',
             premium_99: 'https://buy.stripe.com/bJe28qfUOa4i2hAff0ejK01'
           };
           const paymentUrl = STRIPE_LINKS[internalData.offre_choisie];
-          if (paymentUrl) {
-            internalData._paymentUrl = paymentUrl;
-          }
+          if (paymentUrl) internalData._paymentUrl = paymentUrl;
         }
 
       } catch (error) {
-        logger.error('OpenAI Assistant API Error:', error);
+        logger.error('Claude API Error:', error);
         return res.status(500).json({
           error: 'Erreur lors de la génération de la réponse. Veuillez réessayer.'
         });
       }
     }
 
-    // Calculer le temps de réponse
     const responseTimeMs = Date.now() - startTime;
 
     // ====================================
@@ -400,14 +228,13 @@ export default async function handler(req, res) {
     // ====================================
     try {
       if (conversationSessionId) {
-        // Sauvegarder la question de l'utilisateur
         await addConversationMessage(conversationSessionId, 'user', message, {
           tokensUsed: 0,
           responseTimeMs: null,
           wasCached: false
         });
 
-        // Sauvegarder la réponse complète de l'assistant (avec bloc INTERNAL si présent)
+        // Stocker fullAnswer (avec marqueurs) pour que l'historique transmis à Claude soit complet
         const messageToStore = fullAnswer || answer;
         await addConversationMessage(conversationSessionId, 'assistant', messageToStore, {
           tokensUsed,
@@ -422,11 +249,9 @@ export default async function handler(req, res) {
         });
       }
     } catch (error) {
-      // Ne pas bloquer la réponse si la sauvegarde échoue
       logger.error('Erreur sauvegarde conversation:', error);
     }
 
-    // Définir le cookie d'identifiant anonyme si nécessaire
     if (needsAnonymousCookie) {
       res.setHeader('Set-Cookie', [
         createCookie('anonymous_session_id', anonymousId, { maxAge: 24 * 60 * 60 })
@@ -450,4 +275,3 @@ export default async function handler(req, res) {
     });
   }
 }
-

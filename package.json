@@ -9,10 +9,12 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
     "@upstash/ratelimit": "^2.0.6",
     "@upstash/redis": "^1.35.6",
     "@vercel/blob": "^0.27.0",
-    "@vercel/postgres": "^0.5.0"
+    "@vercel/postgres": "^0.5.0",
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "vercel": "^32.0.0"
