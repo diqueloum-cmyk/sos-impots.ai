@@ -806,6 +806,7 @@
 
     // Compteur pour les IDs de messages uniques
     let messageCounter = 0;
+    let firstQuestionTracked = false;
 
     // CTA chat : transfère la question vers le chat principal
     function sendFromCta() {
@@ -873,6 +874,11 @@
         removeMessage(loadingId);
 
         if (data.success) {
+          if (!firstQuestionTracked) {
+            firstQuestionTracked = true;
+            gtag('event', 'conversion', { 'send_to': 'AW-18158035023/pRk_CKuw2KscEM_AttJD' });
+          }
+
           if (!data.response) {
             throw new Error('Aucune réponse reçue de l\'assistant');
           }
@@ -1058,6 +1064,15 @@
 
   <!-- Cookie Management -->
   <script src="/js/cookies.js"></script>
+
+  <!-- Google Ads tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18158035023"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-18158035023');
+  </script>
 
 </body>
 </html>
